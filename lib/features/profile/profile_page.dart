@@ -10,6 +10,11 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  // Personal Info & Account
+  final TextEditingController nameController =
+      TextEditingController(text: 'Thuý Linh');
+  bool isLoggedIn = false;
+
   // Allergies
   bool milk = true;
   bool peanut = true;
@@ -66,6 +71,103 @@ class _ProfilePageState extends State<ProfilePage> {
             style: TextStyle(fontSize: 14, color: subText),
           ),
           const SizedBox(height: 16),
+
+          // Section 0: Thông tin cá nhân & Đồng bộ Tài khoản
+          _buildCard(
+            title: 'Tên xưng hô & Đồng bộ tài khoản',
+            icon: Icons.account_circle_outlined,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Tên hiển thị / Tên xưng hô:',
+                    style: TextStyle(fontSize: 12, color: subText)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    hintText: 'Nhập tên của bạn (ví dụ: Thuý Linh)',
+                    filled: true,
+                    fillColor: const Color(0xFFF4F6F3),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: cardBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: primaryGreen),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isLoggedIn
+                        ? const Color(0xFFE8F2E7)
+                        : const Color(0xFFF4F6F3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: cardBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isLoggedIn ? Icons.cloud_done : Icons.cloud_outlined,
+                        color: isLoggedIn ? primaryGreen : subText,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isLoggedIn
+                                  ? 'Đã đồng bộ Google (linh@gmail.com)'
+                                  : 'Tài khoản Khách (Lưu trên máy)',
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: inkText),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isLoggedIn
+                                  ? 'Hồ sơ tự động sao lưu an toàn'
+                                  : 'Đăng nhập 1-chạm bằng Google để sao lưu',
+                              style:
+                                  const TextStyle(fontSize: 11, color: subText),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() => isLoggedIn = !isLoggedIn);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(isLoggedIn
+                                  ? 'Đã đồng bộ bằng Google thành công!'
+                                  : 'Đã chuyển sang chế độ Khách'),
+                              backgroundColor: primaryGreen,
+                            ),
+                          );
+                        },
+                        child: Text(
+                          isLoggedIn ? 'Thoát' : 'Đồng bộ',
+                          style: const TextStyle(
+                              color: primaryGreen,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
 
           // Section 1: Dị ứng thực phẩm
           _buildCard(
