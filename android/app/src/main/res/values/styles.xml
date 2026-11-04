@@ -1,0 +1,9 @@
+<resources>
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoActionBar">
+        <item name="android:windowSplashScreenBackground">#FAFAF6</item>
+    </style>
+    <style name="NormalTheme" parent="@android:style/Theme.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#287052</item>
+    </style>
+</resources>
