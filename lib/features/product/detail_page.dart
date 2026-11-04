@@ -327,7 +327,7 @@ class DetailPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 side: const BorderSide(color: cardBorder),
               ),
-              child: ListTile(
+              child: InkWell(
                 onTap: () {
                   Navigator.pushReplacement(
                     context,
@@ -336,12 +336,31 @@ class DetailPage extends StatelessWidget {
                     ),
                   );
                 },
-                leading: PackWidget(food: item, small: true),
-                title: Text(item.name,
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.bold)),
-                subtitle: Text(item.brand, style: const TextStyle(fontSize: 11)),
-                trailing: StatusBadge(result: item.result, fontSize: 10),
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      PackWidget(food: item, small: true),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item.brand,
+                                style: const TextStyle(
+                                    fontSize: 11, color: subText)),
+                            Text(item.name,
+                                style: const TextStyle(
+                                    fontSize: 14, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      StatusBadge(result: item.result, fontSize: 10),
+                    ],
+                  ),
+                ),
               ),
             );
           }),
