@@ -120,6 +120,53 @@ class ExplanationPage extends StatelessWidget {
 
           const SizedBox(height: 10),
 
+          // Interactive AI Assistant Button
+          Card(
+            elevation: 0,
+            color: const Color(0xFFE8F2E7),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: const BorderSide(color: primaryGreen, width: 1.2),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.auto_awesome, color: primaryGreen, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Hỏi AI thêm về sản phẩm này',
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: primaryGreen),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Bạn có thắc mắc khác về thành phần hoặc chế độ dinh dưỡng? Hãy hỏi AI:',
+                    style: TextStyle(fontSize: 12, color: inkText),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      _buildAiPromptChip(context, 'Bánh này có hợp tập gym?'),
+                      _buildAiPromptChip(context, 'Chất nhũ hóa Lecithin có an toàn?'),
+                      _buildAiPromptChip(context, 'Trẻ em ăn được không?'),
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
           // Required Data Notice Container
           Container(
             padding: const EdgeInsets.all(16),
@@ -149,6 +196,56 @@ class ExplanationPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAiPromptChip(BuildContext context, String promptText) {
+    return ActionChip(
+      avatar: const Icon(Icons.chat_bubble_outline, size: 14, color: primaryGreen),
+      label: Text(promptText, style: const TextStyle(fontSize: 11, color: inkText)),
+      backgroundColor: Colors.white,
+      side: const BorderSide(color: cardBorder),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      onPressed: () {
+        showModalBottomSheet(
+          context: context,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (_) => Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.auto_awesome, color: primaryGreen),
+                    SizedBox(width: 8),
+                    Text('Trợ lý AI Ăn Lành', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text('Q: $promptText', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: primaryGreen)),
+                const SizedBox(height: 8),
+                const Text(
+                  'A: (Phản hồi tự động từ AI): Dựa trên bảng thành phần, Lecithin đậu nành được dùng làm chất nhũ hóa tự nhiên, an toàn với đa số người dùng trừ người dị ứng đậu nành nặng. Sản phẩm chứa 45% yến mạch tốt cho tiêu hóa.',
+                  style: TextStyle(fontSize: 13, height: 1.4),
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: primaryGreen,
+                    minimumSize: const Size.fromHeight(44),
+                  ),
+                  child: const Text('Đã hiểu'),
+                )
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

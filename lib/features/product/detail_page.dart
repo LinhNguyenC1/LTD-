@@ -120,6 +120,109 @@ class DetailPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
+          // AI Analysis & Pros/Cons Card
+          Card(
+            elevation: 0,
+            color: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: cardBorder),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.psychology_outlined, color: primaryGreen, size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Phân tích AI theo hồ sơ cá nhân',
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: inkText),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isBad
+                              ? const Color(0xFFFCEAE6)
+                              : const Color(0xFFE4F1E5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          isBad ? 'AI Score: 35/100' : 'AI Score: 92/100',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isBad ? const Color(0xFFB23A2B) : primaryGreen,
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE4F1E5),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.add_circle_outline, size: 14, color: primaryGreen),
+                                  SizedBox(width: 4),
+                                  Text('Điểm cộng AI', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: primaryGreen)),
+                                ],
+                              ),
+                              SizedBox(height: 4),
+                              Text('• Yến mạch 45% giàu chất xơ\n• Lượng muối vừa phải', style: TextStyle(fontSize: 11, color: inkText, height: 1.3)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFCEAE6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.remove_circle_outline, size: 14, color: Color(0xFFB23A2B)),
+                                  SizedBox(width: 4),
+                                  Text('Rủi ro AI phát hiện', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFB23A2B))),
+                                ],
+                              ),
+                              SizedBox(height: 4),
+                              Text('• Trùng dị ứng: Bột sữa 8%\n• Siêu chế biến: NOVA 4', style: TextStyle(fontSize: 11, color: inkText, height: 1.3)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Section 1: Thành phần
           _buildInfoCard(
             title: 'Thành phần',
