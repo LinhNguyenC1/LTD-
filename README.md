@@ -1,19 +1,25 @@
-# Ăn Lành
+# 🥗 Ăn Lành - Application Mockup
 
-Frontend mockup Flutter cho ứng dụng quét và đánh giá thực phẩm theo hồ sơ ăn uống cá nhân.
+Frontend mockup ứng dụng Flutter quét và đánh giá thực phẩm theo hồ sơ ăn uống cá nhân.
 
-## Mở bằng Android Studio
+## 📖 Hướng dẫn nhanh
 
-1. Mở thư mục repo này bằng Android Studio có cài Flutter/Dart plugin.
-2. Chạy `flutter pub get`.
-3. Chọn emulator hoặc thiết bị Android.
-4. Chạy `lib/main.dart`.
+- Xem tài liệu hướng dẫn cài đặt và chạy demo chi tiết từng bước tại: **[GUIDE.md](./GUIDE.md)**
 
-## Phạm vi hiện tại
+## 🚀 Chạy nhanh ứng dụng
 
-- Mockup frontend, dữ liệu mẫu chạy cục bộ.
-- Hồ sơ ăn uống, màn quét barcode và fallback quét bảng thành phần.
-- Chi tiết sản phẩm, giải thích kết luận, gợi ý sản phẩm phù hợp.
-- Lịch sử đánh giá và so sánh hai sản phẩm.
+1. Mở dự án bằng **Android Studio** có cài đặt Flutter Plugin.
+2. Chạy `flutter pub get` trong Terminal.
+3. Chạy ứng dụng trên trình duyệt Chrome hoặc Emulator:
+   ```bash
+   flutter run -d chrome
+   ```
 
-API Open Food Facts, camera thật, OCR, AI, lưu trữ và rule engine sẽ tích hợp ở các phase sau.
+## 📱 Các tính năng chính trong bản Mockup
+
+- **Hồ sơ ăn uống cá nhân**: Tùy chỉnh dị ứng, ngưỡng hạn chế đường/muối, chế độ ăn, mục tiêu dinh dưỡng và **khung nhập ghi chú AI**.
+- **Quét mã vạch & Bảng thành phần**: Giao diện quét camera với chế độ dự phòng quét bảng thành phần OCR khi mã vạch không khả dụng.
+- **Đánh giá & Giải thích**: Đánh giá *"Phù hợp"*, *"Cần cân nhắc"*, *"Không phù hợp"*, *"Chưa đủ dữ liệu"* kèm màn hình giải thích tiêu chí chi tiết.
+- **Gợi ý sản phẩm phù hợp hơn (AI/Rule)**: Tự động đề xuất sản phẩm tốt hơn dựa trên hồ sơ cá nhân.
+- **So sánh hai sản phẩm**: Đặt 2 nhãn cạnh nhau đối chiếu các chỉ số dinh dưỡng và cảnh báo dị ứng.
+- **Lịch sử đánh giá**: Lưu vết lịch sử theo ngày kèm bộ lọc kết quả.
