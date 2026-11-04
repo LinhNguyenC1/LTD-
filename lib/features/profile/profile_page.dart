@@ -12,7 +12,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   // Personal Info & Account
   final TextEditingController nameController =
-      TextEditingController(text: 'Thuý Linh');
+      TextEditingController(text: 'Linh');
   bool isLoggedIn = false;
 
   // Allergies
@@ -85,7 +85,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 TextField(
                   controller: nameController,
                   decoration: InputDecoration(
-                    hintText: 'Nhập tên của bạn (ví dụ: Thuý Linh)',
+                    hintText: 'Nhập tên của bạn (ví dụ: Linh)',
                     filled: true,
                     fillColor: const Color(0xFFF4F6F3),
                     contentPadding: const EdgeInsets.symmetric(

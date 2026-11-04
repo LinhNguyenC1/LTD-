@@ -62,7 +62,7 @@ class HomePage extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         const Text(
-          'Chào Thuý Linh, cùng đọc nhãn nhé! 👋',
+          'Chào Linh, cùng đọc nhãn nhé! 👋',
           style: TextStyle(fontSize: 15, color: subText),
         ),
         const SizedBox(height: 14),
