@@ -63,7 +63,7 @@ Sau đó mở Android Studio ➔ chọn **Open** ➔ chọn thư mục `LTD-`.
 flutter run -d chrome
 
 # Chạy trên máy ảo Android
-flutter run -d android
+flutter run -d emulator
 ```
 
 ---

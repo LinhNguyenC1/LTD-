@@ -6,3 +6,4 @@ build/
 pubspec.lock
 .idea/
 .DS_Store
+test/goldens/
