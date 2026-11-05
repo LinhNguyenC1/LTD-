@@ -49,6 +49,8 @@ class _ProfilePageState extends State<ProfilePage> {
       text:
           'Tôi dị ứng sữa và đậu phộng, muốn giảm đường và muối, ưu tiên món chay');
   bool aiConsent = false;
+  bool isAiAnalyzed = false;
+  int appliedCriteriaCount = 5;
 
   @override
   Widget build(BuildContext context) {
@@ -353,104 +355,179 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
-          // Section 5: Ghi chú AI (Matching Figma Design)
+          // Section 5: Ghi chú AI (Matching Figma Design & Dynamic State Flow)
           _buildCard(
             title: 'Ghi chú AI',
             icon: Icons.psychology_outlined,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: aiNotesController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText:
-                        'Bạn có thể mô tả chi tiết chế độ dinh dưỡng, sở thích, mục tiêu dinh dưỡng, các thành phần bạn dị ứng ....',
-                    hintStyle:
-                        const TextStyle(fontSize: 12, color: Colors.black38),
-                    filled: true,
-                    fillColor: const Color(0xFFF4F6F3),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: cardBorder),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: primaryGreen),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Checkbox(
-                        value: aiConsent,
-                        onChanged: (v) =>
-                            setState(() => aiConsent = v ?? false),
-                        activeColor: primaryGreen,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4)),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Tôi đồng ý gửi ghi chú cho dịch vụ AI để gợi ý tiêu chí và cải thiện hồ sơ.',
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: inkText,
-                            height: 1.3),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Bạn cần đồng ý trước khi phân tích và xác nhận các tiêu chí được gợi ý. Dị ứng luôn được ưu tiên, kể cả khi chế độ ăn cho phép sữa.',
-                  style: TextStyle(fontSize: 11, color: subText, height: 1.35),
-                ),
-                const SizedBox(height: 14),
-                FilledButton(
-                  onPressed: aiConsent
-                      ? () async {
-                          final count = await Navigator.push<int>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AiAnalysisPage(
-                                noteText: aiNotesController.text,
+            child: isAiAnalyzed
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Badge indicating confirmed AI Analysis
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F2E7),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: primaryGreen),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle_outline,
+                                color: primaryGreen, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Đã phân tích & áp dụng $appliedCriteriaCount tiêu chí từ AI',
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: primaryGreen),
                               ),
                             ),
-                          );
-                          if (count != null && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Đã áp dụng thành công $count tiêu chí từ AI vào hồ sơ!'),
-                                backgroundColor: primaryGreen,
-                              ),
-                            );
-                          }
-                        }
-                      : null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: primaryGreen,
-                    disabledBackgroundColor: const Color(0xFFEBEFEA),
-                    disabledForegroundColor: Colors.black38,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFAFBF9),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: cardBorder),
+                        ),
+                        child: Text(
+                          aiNotesController.text,
+                          style: const TextStyle(fontSize: 13, color: inkText),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            isAiAnalyzed = false;
+                          });
+                        },
+                        icon: const Icon(Icons.edit_note, color: primaryGreen),
+                        label: const Text('Chỉnh sửa ghi chú',
+                            style: TextStyle(
+                                color: primaryGreen,
+                                fontWeight: FontWeight.bold)),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                          side: const BorderSide(color: cardBorder),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: aiNotesController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText:
+                              'Bạn có thể mô tả chi tiết chế độ dinh dưỡng, sở thích, mục tiêu dinh dưỡng, các thành phần bạn dị ứng ....',
+                          hintStyle: const TextStyle(
+                              fontSize: 12, color: Colors.black38),
+                          filled: true,
+                          fillColor: const Color(0xFFF4F6F3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: cardBorder),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: primaryGreen),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: aiConsent,
+                              onChanged: (v) =>
+                                  setState(() => aiConsent = v ?? false),
+                              activeColor: primaryGreen,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Tôi đồng ý gửi ghi chú cho dịch vụ AI để gợi ý tiêu chí và cải thiện hồ sơ.',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: inkText,
+                                  height: 1.3),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Bạn cần đồng ý trước khi phân tích và xác nhận các tiêu chí được gợi ý. Dị ứng luôn được ưu tiên, kể cả khi chế độ ăn cho phép sữa.',
+                        style: TextStyle(
+                            fontSize: 11, color: subText, height: 1.35),
+                      ),
+                      const SizedBox(height: 14),
+                      FilledButton(
+                        onPressed: aiConsent
+                            ? () async {
+                                final count = await Navigator.push<int>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AiAnalysisPage(
+                                      noteText: aiNotesController.text,
+                                    ),
+                                  ),
+                                );
+                                if (count != null && context.mounted) {
+                                  setState(() {
+                                    isAiAnalyzed = true;
+                                    appliedCriteriaCount = count;
+                                  });
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'Đã áp dụng thành công $count tiêu chí từ AI vào hồ sơ!'),
+                                      backgroundColor: primaryGreen,
+                                    ),
+                                  );
+                                }
+                              }
+                            : null,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: primaryGreen,
+                          disabledBackgroundColor: const Color(0xFFEBEFEA),
+                          disabledForegroundColor: Colors.black38,
+                          minimumSize: const Size.fromHeight(48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          aiConsent && aiNotesController.text.isNotEmpty
+                              ? 'Cập nhật & Phân tích ghi chú'
+                              : 'Phân tích ghi chú',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
-                  child: const Text('Phân tích ghi chú',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
           ),
 
           // Notice Container
