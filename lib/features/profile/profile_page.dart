@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import 'delete_confirm_dialog.dart';
+import 'ai_analysis_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -44,7 +45,10 @@ class _ProfilePageState extends State<ProfilePage> {
   bool goalHealth = false;
 
   // AI Notes / Custom Context
-  final TextEditingController aiNotesController = TextEditingController();
+  final TextEditingController aiNotesController = TextEditingController(
+      text:
+          'Tôi dị ứng sữa và đậu phộng, muốn giảm đường và muối, ưu tiên món chay');
+  bool aiConsent = false;
 
   @override
   Widget build(BuildContext context) {
@@ -349,24 +353,19 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
-          // Section 5: Ghi chú thêm (AI Prompt Context)
+          // Section 5: Ghi chú AI (Matching Figma Design)
           _buildCard(
-            title: 'Ghi chú thêm (AI)',
+            title: 'Ghi chú AI',
             icon: Icons.psychology_outlined,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Bạn có thể mô tả chi tiết chế độ dinh dưỡng, sở thích, mục tiêu dinh dưỡng, các thành phần bạn dị ứng hoặc cần AI tư vấn thêm...',
-                  style: TextStyle(fontSize: 12, color: subText),
-                ),
-                const SizedBox(height: 10),
                 TextField(
                   controller: aiNotesController,
                   maxLines: 3,
                   decoration: InputDecoration(
                     hintText:
-                        'Ví dụ: Tôi dị ứng hải sản nặng, thích sản phẩm có nhiều chất xơ, không thích đường hóa học...',
+                        'Bạn có thể mô tả chi tiết chế độ dinh dưỡng, sở thích, mục tiêu dinh dưỡng, các thành phần bạn dị ứng ....',
                     hintStyle:
                         const TextStyle(fontSize: 12, color: Colors.black38),
                     filled: true,
@@ -380,6 +379,75 @@ class _ProfilePageState extends State<ProfilePage> {
                       borderSide: const BorderSide(color: primaryGreen),
                     ),
                   ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Checkbox(
+                        value: aiConsent,
+                        onChanged: (v) =>
+                            setState(() => aiConsent = v ?? false),
+                        activeColor: primaryGreen,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Tôi đồng ý gửi ghi chú cho dịch vụ AI để gợi ý tiêu chí và cải thiện hồ sơ.',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: inkText,
+                            height: 1.3),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Bạn cần đồng ý trước khi phân tích và xác nhận các tiêu chí được gợi ý. Dị ứng luôn được ưu tiên, kể cả khi chế độ ăn cho phép sữa.',
+                  style: TextStyle(fontSize: 11, color: subText, height: 1.35),
+                ),
+                const SizedBox(height: 14),
+                FilledButton(
+                  onPressed: aiConsent
+                      ? () async {
+                          final count = await Navigator.push<int>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AiAnalysisPage(
+                                noteText: aiNotesController.text,
+                              ),
+                            ),
+                          );
+                          if (count != null && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Đã áp dụng thành công $count tiêu chí từ AI vào hồ sơ!'),
+                                backgroundColor: primaryGreen,
+                              ),
+                            );
+                          }
+                        }
+                      : null,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: primaryGreen,
+                    disabledBackgroundColor: const Color(0xFFEBEFEA),
+                    disabledForegroundColor: Colors.black38,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Phân tích ghi chú',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
