@@ -137,14 +137,17 @@ class DetailPage extends StatelessWidget {
                     children: [
                       const Icon(Icons.psychology_outlined, color: primaryGreen, size: 20),
                       const SizedBox(width: 8),
-                      const Text(
-                        'Phân tích AI theo hồ sơ cá nhân',
-                        style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: inkText),
+                      const Expanded(
+                        child: Text(
+                          'Phân tích AI theo hồ sơ',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: inkText),
+                        ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
