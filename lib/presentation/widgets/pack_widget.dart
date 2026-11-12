@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/models/food.dart';
+import '../../data/models/food.dart';
 
 class PackWidget extends StatelessWidget {
   const PackWidget({super.key, required this.food, this.small = false});

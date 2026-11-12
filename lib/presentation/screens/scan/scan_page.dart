@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/models/food.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../data/models/food.dart';
+import '../../../core/theme/app_theme.dart';
 import 'lookup_error_page.dart';
 import 'lookup_not_found_page.dart';
 
@@ -113,7 +113,8 @@ class _ScanPageState extends State<ScanPage>
                   subtitle: const Text(
                       'Ăn Lành sẽ đọc danh sách thành phần trực tiếp từ mặt sau bao bì',
                       style: TextStyle(fontSize: 11, color: inkText)),
-                  trailing: const Icon(Icons.chevron_right, color: primaryGreen),
+                  trailing:
+                      const Icon(Icons.chevron_right, color: primaryGreen),
                 ),
               ),
               const SizedBox(height: 10),
@@ -131,11 +132,11 @@ class _ScanPageState extends State<ScanPage>
                     Navigator.pop(ctx);
                     setState(() => scanMode = ScanMode.manualInput);
                   },
-                  leading: const Icon(Icons.keyboard,
-                      color: primaryGreen, size: 26),
+                  leading:
+                      const Icon(Icons.keyboard, color: primaryGreen, size: 26),
                   title: const Text('Nhập mã vạch thủ công',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 14)),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                   subtitle: const Text('Gõ dãy số mã vạch in dưới đường kẻ',
                       style: TextStyle(fontSize: 11, color: subText)),
                   trailing: const Icon(Icons.chevron_right, color: subText),
@@ -252,7 +253,8 @@ class _ScanPageState extends State<ScanPage>
                           ),
                         ),
                       ),
-                      Container(color: Colors.black.withAlpha(flashOn ? 30 : 100)),
+                      Container(
+                          color: Colors.black.withAlpha(flashOn ? 30 : 100)),
 
                       // Mode Badge Banner
                       Positioned(

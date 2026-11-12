@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import 'delete_confirm_dialog.dart';
 import 'ai_analysis_page.dart';
 
@@ -195,7 +195,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 _buildCheckRow(
                   title: 'Gluten',
-                  subtitle: gluten ? 'Đã chọn trong hồ sơ' : 'Chưa chọn trong hồ sơ này',
+                  subtitle: gluten
+                      ? 'Đã chọn trong hồ sơ'
+                      : 'Chưa chọn trong hồ sơ này',
                   value: gluten,
                   onChanged: (v) => setState(() => gluten = v ?? false),
                 ),

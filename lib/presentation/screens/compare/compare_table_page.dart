@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/models/food.dart';
-import '../../core/theme/app_theme.dart';
-import '../widgets/pack_widget.dart';
+import '../../../data/models/food.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../widgets/pack_widget.dart';
 import 'compare_select_page.dart';
 
 class CompareTablePage extends StatelessWidget {
@@ -125,8 +125,8 @@ class CompareTablePage extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         'Với hồ sơ của bạn, bánh ${foodB.brand} phù hợp hơn với các tiêu chí đã lưu. Bánh ${foodA.brand} có sữa và thuộc NOVA 4.',
-                        style:
-                            const TextStyle(fontSize: 12, color: inkText, height: 1.35),
+                        style: const TextStyle(
+                            fontSize: 12, color: inkText, height: 1.35),
                       ),
                     ],
                   ),
@@ -180,7 +180,9 @@ class CompareTablePage extends StatelessWidget {
                   // Row: Kết luận cá nhân
                   _buildTableRow(
                     'Kết luận cá nhân',
-                    foodA.result == Result.bad ? 'Không phù hợp' : getResultText(foodA.result),
+                    foodA.result == Result.bad
+                        ? 'Không phù hợp'
+                        : getResultText(foodA.result),
                     getResultText(foodB.result),
                     highlightA: foodA.result == Result.bad,
                     highlightB: foodB.result == Result.good,
@@ -190,7 +192,9 @@ class CompareTablePage extends StatelessWidget {
                   // Row: Dị ứng sữa
                   _buildTableRow(
                     'Dị ứng sữa',
-                    foodA.ingredients.contains('sữa') ? 'Có sữa 8%' : 'Không chứa¹',
+                    foodA.ingredients.contains('sữa')
+                        ? 'Có sữa 8%'
+                        : 'Không chứa¹',
                     'Không chứa¹',
                     highlightA: foodA.ingredients.contains('sữa'),
                     highlightB: false,
@@ -275,12 +279,13 @@ class CompareTablePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Vì sao ${foodB.brand} được đánh giá phù hợp?',
-                      style:
-                          const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 15)),
                   const SizedBox(height: 8),
                   Text(
                     '¹ ${foodB.allergenWarning}\n\nThành phần: ${foodB.ingredients}',
-                    style: const TextStyle(fontSize: 12, color: inkText, height: 1.4),
+                    style: const TextStyle(
+                        fontSize: 12, color: inkText, height: 1.4),
                   ),
                 ],
               ),
@@ -303,7 +308,8 @@ class CompareTablePage extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Không dùng điểm số để kết luận an toàn dị ứng.\nNutri-Score và Eco-Score là thông tin độc lập. Nếu thiếu một trường, bảng ghi “Chưa có dữ liệu”, không thay bằng 0.',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF2C4359), height: 1.35),
+                    style: TextStyle(
+                        fontSize: 11, color: Color(0xFF2C4359), height: 1.35),
                   ),
                 ),
               ],
@@ -356,8 +362,8 @@ class CompareTablePage extends StatelessWidget {
       children: [
         Expanded(
           flex: 3,
-          child: Text(label,
-              style: const TextStyle(fontSize: 12, color: subText)),
+          child:
+              Text(label, style: const TextStyle(fontSize: 12, color: subText)),
         ),
         Expanded(
           flex: 3,
@@ -366,7 +372,9 @@ class CompareTablePage extends StatelessWidget {
             decoration: BoxDecoration(
               color: highlightA
                   ? const Color(0xFFFCEAE6)
-                  : (valA == 'Phù hợp' ? const Color(0xFFE4F1E5) : Colors.transparent),
+                  : (valA == 'Phù hợp'
+                      ? const Color(0xFFE4F1E5)
+                      : Colors.transparent),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
@@ -385,9 +393,7 @@ class CompareTablePage extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
             decoration: BoxDecoration(
-              color: highlightB
-                  ? const Color(0xFFE4F1E5)
-                  : Colors.transparent,
+              color: highlightB ? const Color(0xFFE4F1E5) : Colors.transparent,
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(

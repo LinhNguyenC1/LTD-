@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../core/models/food.dart';
-import '../../core/theme/app_theme.dart';
-import '../widgets/status_badge.dart';
-import '../widgets/pack_widget.dart';
+import '../../../data/models/food.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../widgets/status_badge.dart';
+import '../../widgets/pack_widget.dart';
 import '../compare/compare_select_page.dart';
 
 class HistoryPage extends StatefulWidget {
@@ -35,7 +35,9 @@ class _HistoryPageState extends State<HistoryPage> {
               children: [
                 Text('Lịch sử đánh giá',
                     style: TextStyle(
-                        fontWeight: FontWeight.w900, fontSize: 22, color: inkText)),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 22,
+                        color: inkText)),
                 Spacer(),
                 Icon(Icons.eco_outlined, color: primaryGreen),
               ],
@@ -53,8 +55,8 @@ class _HistoryPageState extends State<HistoryPage> {
           // Filter Chips
           Wrap(
             spacing: 8,
-            children: ['Tất cả', 'Không phù hợp', 'Chưa đủ dữ liệu']
-                .map((filter) {
+            children:
+                ['Tất cả', 'Không phù hợp', 'Chưa đủ dữ liệu'].map((filter) {
               final isSelected = selectedFilter == filter;
               return ChoiceChip(
                 label: Text(filter,

@@ -1,25 +1,37 @@
 import 'package:flutter/material.dart';
-import 'core/models/food.dart';
+import 'package:provider/provider.dart';
+import 'business_logic/viewmodels/profile_viewmodel.dart';
+import 'data/models/food.dart';
 import 'core/theme/app_theme.dart';
-import 'features/home/home_page.dart';
-import 'features/scan/scan_page.dart';
-import 'features/history/history_page.dart';
-import 'features/profile/profile_page.dart';
-import 'features/product/detail_page.dart';
-import 'features/compare/compare_select_page.dart';
+import 'presentation/screens/home/home_page.dart';
+import 'presentation/screens/scan/scan_page.dart';
+import 'presentation/screens/history/history_page.dart';
+import 'presentation/screens/profile/profile_page.dart';
+import 'presentation/screens/product/detail_page.dart';
+import 'presentation/screens/compare/compare_select_page.dart';
 
-void main() => runApp(const AnLanhApp());
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const AnLanhApp());
+}
 
 class AnLanhApp extends StatelessWidget {
   const AnLanhApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Ăn Lành',
-      theme: buildAppTheme(),
-      home: const Shell(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => ProfileViewModel()..loadProfile(),
+        ),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Ăn Lành',
+        theme: buildAppTheme(),
+        home: const Shell(),
+      ),
     );
   }
 }

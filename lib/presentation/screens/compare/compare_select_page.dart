@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../core/models/food.dart';
-import '../../core/theme/app_theme.dart';
-import '../widgets/status_badge.dart';
-import '../widgets/pack_widget.dart';
+import '../../../data/models/food.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../widgets/status_badge.dart';
+import '../../widgets/pack_widget.dart';
 import 'compare_table_page.dart';
 
 class CompareSelectPage extends StatefulWidget {

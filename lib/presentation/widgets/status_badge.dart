@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/models/food.dart';
+import '../../data/models/food.dart';
 import '../../core/theme/app_theme.dart';
 
 class StatusBadge extends StatelessWidget {
@@ -18,7 +18,8 @@ class StatusBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(getResultIcon(result), size: fontSize + 2, color: getResultColor(result)),
+          Icon(getResultIcon(result),
+              size: fontSize + 2, color: getResultColor(result)),
           const SizedBox(width: 5),
           Text(
             getResultText(result),

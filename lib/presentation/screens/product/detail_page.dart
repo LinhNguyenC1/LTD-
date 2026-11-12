@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../core/models/food.dart';
-import '../../core/theme/app_theme.dart';
-import '../widgets/status_badge.dart';
-import '../widgets/pack_widget.dart';
+import '../../../data/models/food.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../widgets/status_badge.dart';
+import '../../widgets/pack_widget.dart';
 import 'explanation_page.dart';
 import '../compare/compare_select_page.dart';
 
@@ -49,18 +49,18 @@ class DetailPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('${food.brand} · ${food.weight}',
-                          style:
-                              const TextStyle(color: subText, fontSize: 12)),
+                          style: const TextStyle(color: subText, fontSize: 12)),
                       const SizedBox(height: 6),
                       Text(
                         food.name,
                         style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w900, height: 1.2),
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            height: 1.2),
                       ),
                       const SizedBox(height: 10),
                       Text('Mã vạch ${food.barcode}',
-                          style:
-                              const TextStyle(color: subText, fontSize: 11)),
+                          style: const TextStyle(color: subText, fontSize: 11)),
                     ],
                   ),
                 )
@@ -93,7 +93,8 @@ class DetailPage extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   food.reason,
-                  style: const TextStyle(fontSize: 13, color: inkText, height: 1.4),
+                  style: const TextStyle(
+                      fontSize: 13, color: inkText, height: 1.4),
                 ),
                 const SizedBox(height: 14),
                 OutlinedButton.icon(
@@ -135,7 +136,8 @@ class DetailPage extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.psychology_outlined, color: primaryGreen, size: 20),
+                      const Icon(Icons.psychology_outlined,
+                          color: primaryGreen, size: 20),
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
@@ -149,7 +151,8 @@ class DetailPage extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: isBad
                               ? const Color(0xFFFCEAE6)
@@ -161,7 +164,8 @@ class DetailPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: isBad ? const Color(0xFFB23A2B) : primaryGreen,
+                            color:
+                                isBad ? const Color(0xFFB23A2B) : primaryGreen,
                           ),
                         ),
                       )
@@ -183,13 +187,23 @@ class DetailPage extends StatelessWidget {
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.add_circle_outline, size: 14, color: primaryGreen),
+                                  Icon(Icons.add_circle_outline,
+                                      size: 14, color: primaryGreen),
                                   SizedBox(width: 4),
-                                  Text('Điểm cộng AI', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: primaryGreen)),
+                                  Text('Điểm cộng AI',
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: primaryGreen)),
                                 ],
                               ),
                               SizedBox(height: 4),
-                              Text('• Yến mạch 45% giàu chất xơ\n• Lượng muối vừa phải', style: TextStyle(fontSize: 11, color: inkText, height: 1.3)),
+                              Text(
+                                  '• Yến mạch 45% giàu chất xơ\n• Lượng muối vừa phải',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: inkText,
+                                      height: 1.3)),
                             ],
                           ),
                         ),
@@ -207,13 +221,23 @@ class DetailPage extends StatelessWidget {
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.remove_circle_outline, size: 14, color: Color(0xFFB23A2B)),
+                                  Icon(Icons.remove_circle_outline,
+                                      size: 14, color: Color(0xFFB23A2B)),
                                   SizedBox(width: 4),
-                                  Text('Rủi ro AI phát hiện', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFB23A2B))),
+                                  Text('Rủi ro AI phát hiện',
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFFB23A2B))),
                                 ],
                               ),
                               SizedBox(height: 4),
-                              Text('• Trùng dị ứng: Bột sữa 8%\n• Siêu chế biến: NOVA 4', style: TextStyle(fontSize: 11, color: inkText, height: 1.3)),
+                              Text(
+                                  '• Trùng dị ứng: Bột sữa 8%\n• Siêu chế biến: NOVA 4',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: inkText,
+                                      height: 1.3)),
                             ],
                           ),
                         ),
@@ -251,9 +275,7 @@ class DetailPage extends StatelessWidget {
                           isBad
                               ? Icons.warning_amber_rounded
                               : Icons.check_circle_outline,
-                          color: isBad
-                              ? const Color(0xFFB23A2B)
-                              : primaryGreen,
+                          color: isBad ? const Color(0xFFB23A2B) : primaryGreen,
                           size: 18,
                         ),
                         const SizedBox(width: 8),
@@ -364,7 +386,8 @@ class DetailPage extends StatelessWidget {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const DetailPage(food: foodOriginal),
+                            builder: (_) =>
+                                const DetailPage(food: foodOriginal),
                           ),
                         );
                       },

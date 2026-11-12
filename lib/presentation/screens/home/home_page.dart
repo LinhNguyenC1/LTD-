@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../core/models/food.dart';
-import '../../core/theme/app_theme.dart';
-import '../widgets/status_badge.dart';
-import '../widgets/pack_widget.dart';
+import '../../../data/models/food.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../widgets/status_badge.dart';
+import '../../widgets/pack_widget.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({
@@ -197,8 +197,8 @@ class HomePage extends StatelessWidget {
                       visualDensity: VisualDensity.compact,
                     ),
                     Chip(
-                      label:
-                          Text('Dị ứng đậu phộng', style: TextStyle(fontSize: 11)),
+                      label: Text('Dị ứng đậu phộng',
+                          style: TextStyle(fontSize: 11)),
                       backgroundColor: Color(0xFFF2F4F2),
                       visualDensity: VisualDensity.compact,
                     ),
@@ -278,7 +278,8 @@ class HomePage extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {},
-              child: const Text('Tất cả', style: TextStyle(color: primaryGreen)),
+              child:
+                  const Text('Tất cả', style: TextStyle(color: primaryGreen)),
             ),
           ],
         ),
@@ -318,8 +319,7 @@ class HomePage extends StatelessWidget {
                         const SizedBox(height: 6),
                         Text(
                           '${recentFood.scanDate} · ${recentFood.summaryTags}',
-                          style:
-                              const TextStyle(fontSize: 11, color: subText),
+                          style: const TextStyle(fontSize: 11, color: subText),
                         ),
                       ],
                     ),

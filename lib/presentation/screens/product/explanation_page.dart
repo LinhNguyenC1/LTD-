@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/models/food.dart';
-import '../../core/theme/app_theme.dart';
-import '../widgets/status_badge.dart';
+import '../../../data/models/food.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../widgets/status_badge.dart';
 
 class ExplanationPage extends StatelessWidget {
   const ExplanationPage({super.key, required this.food});
@@ -14,7 +14,8 @@ class ExplanationPage extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => _AiChatModal(food: food, initialQuestion: initialQuestion),
+      builder: (_) =>
+          _AiChatModal(food: food, initialQuestion: initialQuestion),
     );
   }
 
@@ -112,9 +113,8 @@ class ExplanationPage extends StatelessWidget {
             icon: food.nova == '4'
                 ? Icons.cancel_outlined
                 : Icons.check_circle_outline,
-            iconColor: food.nova == '4'
-                ? const Color(0xFFB23A2B)
-                : primaryGreen,
+            iconColor:
+                food.nova == '4' ? const Color(0xFFB23A2B) : primaryGreen,
             description: food.nova == '4'
                 ? 'Dữ liệu minh họa xếp sản phẩm ở NOVA 4, nhóm thực phẩm siêu chế biến mà bạn chọn tránh.'
                 : 'Sản phẩm thuộc NOVA ${food.nova}.',
@@ -124,9 +124,8 @@ class ExplanationPage extends StatelessWidget {
             badgeBg: food.nova == '4'
                 ? const Color(0xFFFCEAE6)
                 : const Color(0xFFE4F1E5),
-            badgeTextColor: food.nova == '4'
-                ? const Color(0xFFB23A2B)
-                : primaryGreen,
+            badgeTextColor:
+                food.nova == '4' ? const Color(0xFFB23A2B) : primaryGreen,
           ),
 
           const SizedBox(height: 10),
@@ -170,7 +169,8 @@ class ExplanationPage extends StatelessWidget {
                     runSpacing: 6,
                     children: [
                       _buildAiPromptChip(context, 'Bánh này có hợp tập gym?'),
-                      _buildAiPromptChip(context, 'Chất nhũ hóa Lecithin có an toàn?'),
+                      _buildAiPromptChip(
+                          context, 'Chất nhũ hóa Lecithin có an toàn?'),
                       _buildAiPromptChip(context, 'Trẻ em ăn được không?'),
                     ],
                   ),
@@ -230,7 +230,8 @@ class ExplanationPage extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Dữ liệu cần thiết đã có\nKhông thiếu thành phần, thông tin dị ứng, đường, muối hoặc NOVA cho lần đánh giá này. Gluten không được chọn nên không tham gia kết luận.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF2C4359), height: 1.4),
+                    style: TextStyle(
+                        fontSize: 12, color: Color(0xFF2C4359), height: 1.4),
                   ),
                 ),
               ],
@@ -249,8 +250,10 @@ class ExplanationPage extends StatelessWidget {
 
   Widget _buildAiPromptChip(BuildContext context, String promptText) {
     return ActionChip(
-      avatar: const Icon(Icons.chat_bubble_outline, size: 14, color: primaryGreen),
-      label: Text(promptText, style: const TextStyle(fontSize: 11, color: inkText)),
+      avatar:
+          const Icon(Icons.chat_bubble_outline, size: 14, color: primaryGreen),
+      label: Text(promptText,
+          style: const TextStyle(fontSize: 11, color: inkText)),
       backgroundColor: Colors.white,
       side: const BorderSide(color: cardBorder),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -293,7 +296,8 @@ class ExplanationPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(description,
-                style: const TextStyle(fontSize: 13, color: inkText, height: 1.35)),
+                style: const TextStyle(
+                    fontSize: 13, color: inkText, height: 1.35)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -416,8 +420,7 @@ class _AiChatModalState extends State<_AiChatModal> {
                               fontSize: 16,
                               color: inkText)),
                       Text('Đang hỏi đáp về: ${widget.food.name}',
-                          style:
-                              const TextStyle(fontSize: 11, color: subText)),
+                          style: const TextStyle(fontSize: 11, color: subText)),
                     ],
                   ),
                 ),
@@ -446,9 +449,7 @@ class _AiChatModalState extends State<_AiChatModal> {
                         maxWidth: MediaQuery.of(context).size.width * 0.78,
                       ),
                       decoration: BoxDecoration(
-                        color: isUser
-                            ? primaryGreen
-                            : const Color(0xFFE8F2E7),
+                        color: isUser ? primaryGreen : const Color(0xFFE8F2E7),
                         borderRadius: BorderRadius.only(
                           topLeft: const Radius.circular(16),
                           topRight: const Radius.circular(16),

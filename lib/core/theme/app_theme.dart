@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/food.dart';
+import '../../data/models/food.dart';
 
 const Color primaryGreen = Color(0xFF1E533B);
 const Color canvasBg = Color(0xFFF8F8F2);

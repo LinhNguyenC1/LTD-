@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AiAnalysisPage extends StatefulWidget {
   const AiAnalysisPage({super.key, required this.noteText});
@@ -19,9 +19,8 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
 
   @override
   Widget build(BuildContext context) {
-    final int selectedCount = [cMilk, cPeanut, cSugar, cSalt, cVeg]
-        .where((item) => item)
-        .length;
+    final int selectedCount =
+        [cMilk, cPeanut, cSugar, cSalt, cVeg].where((item) => item).length;
 
     return Scaffold(
       appBar: AppBar(
@@ -45,7 +44,8 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE4F1E5),
                   borderRadius: BorderRadius.circular(16),
@@ -102,7 +102,8 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
                       widget.noteText.isNotEmpty
                           ? widget.noteText
                           : 'Tôi dị ứng sữa và đậu phộng, muốn giảm đường và muối, ưu tiên món chay',
-                      style: const TextStyle(fontSize: 13, color: inkText, height: 1.4),
+                      style: const TextStyle(
+                          fontSize: 13, color: inkText, height: 1.4),
                     ),
                   ),
                 ],
@@ -135,7 +136,8 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
                       SizedBox(height: 4),
                       Text(
                         'Ghi chú đã được gửi cho dịch vụ AI sau khi bạn đồng ý. Quyền này chỉ dành cho lần gửi vừa rồi, không phải đồng ý cho mọi lần sau.\n\nMặc định không chia sẻ. Mỗi lần gửi mới đều cần bạn cho phép trước.',
-                        style: TextStyle(fontSize: 11, color: inkText, height: 1.35),
+                        style: TextStyle(
+                            fontSize: 11, color: inkText, height: 1.35),
                       ),
                     ],
                   ),
@@ -238,7 +240,10 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
                       SizedBox(height: 2),
                       Text(
                         'Đường ≤ 10 g và muối ≤ 0,30 g trên 100 g đã có trong hồ sơ. AI không đặt mức mới; đây không phải ngưỡng y khoa.',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF2C4359), height: 1.35),
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF2C4359),
+                            height: 1.35),
                       ),
                     ],
                   ),
@@ -273,7 +278,10 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
                       SizedBox(height: 2),
                       Text(
                         'Chế độ chay có trứng và sữa không cho phép bỏ qua dị ứng sữa. Không tự thêm gluten hoặc thay mục tiêu giảm cân và tiêu chí tránh NOVA 4.',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF6E4B0B), height: 1.35),
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF6E4B0B),
+                            height: 1.35),
                       ),
                     ],
                   ),
@@ -345,7 +353,9 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
             children: [
               Text(title,
                   style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 14, color: inkText)),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: inkText)),
               Text(subtitle,
                   style: const TextStyle(fontSize: 11, color: subText)),
               const SizedBox(height: 4),
