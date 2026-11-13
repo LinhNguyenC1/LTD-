@@ -20,10 +20,20 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onConfigure: _onConfigure,
       onCreate: _createDB,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    await db.execute('DROP TABLE IF EXISTS scan_history');
+    await db.execute('DROP TABLE IF EXISTS product_nutrition');
+    await db.execute('DROP TABLE IF EXISTS cached_product');
+    await db.execute('DROP TABLE IF EXISTS user_allergen');
+    await db.execute('DROP TABLE IF EXISTS user_profile');
+    await _createDB(db, newVersion);
   }
 
   Future<void> _onConfigure(Database db) async {
@@ -44,7 +54,7 @@ class DatabaseHelper {
       CREATE TABLE user_allergen (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         profile_id INTEGER NOT NULL,
-        allergen TEXT NOT NULL,
+        allergen_code TEXT NOT NULL,
         FOREIGN KEY (profile_id) REFERENCES user_profile (id) ON DELETE CASCADE
       )
     ''');
