@@ -3,420 +3,956 @@ import 'package:provider/provider.dart';
 import '../../../business_logic/viewmodels/profile_viewmodel.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+	const ProfilePage({super.key});
 
-  @override
-  State<ProfilePage> createState() => _ProfilePageState();
+	@override
+	State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // Bảng màu chuẩn theo thiết kế Tuần 2 của nhóm
-  static const Color _primaryGreen = Color(0xFF286549);
-  static const Color _softGreenBg = Color(0xFFEAF2EE);
-  static const Color _warmBg = Color(0xFFF8F7F2);
-  static const Color _inkText = Color(0xFF203831);
-  static const Color _subText = Color(0xFF66756D);
-  static const Color _dangerRed = Color(0xFFA34035);
+	static const Color _primaryGreen = Color(0xFF286549);
+	static const Color _softGreenBg = Color(0xFFEAF2EE);
+	static const Color _warmBg = Color(0xFFF8F7F2);
+	static const Color _inkText = Color(0xFF203831);
+	static const Color _subText = Color(0xFF66756D);
+	static const Color _dangerRed = Color(0xFFA34035);
 
-  final TextEditingController _nameController = TextEditingController();
+	static const List<Map<String, String>> _allAllergenSuggestions = [
+		{'key': 'milk', 'name': 'Sữa (Lactose / Bột sữa)', 'kw': 'sua lactose bo sua dairy'},
+		{'key': 'peanut', 'name': 'Đậu phộng (Lạc)', 'kw': 'dau phong lac peanut'},
+		{'key': 'gluten', 'name': 'Gluten (Lúa mì / Bột mì)', 'kw': 'gluten lua mi bot mi wheat'},
+		{'key': 'soy', 'name': 'Đậu nành (Soy / Lecithin)', 'kw': 'dau nanh dau tuong soy lecithin tofu dau hu'},
+		{'key': 'egg', 'name': 'Trứng (Lòng trắng, Lòng đỏ)', 'kw': 'trung ga trung vit egg'},
+		{'key': 'shrimp', 'name': 'Tôm / Tép', 'kw': 'tom tep shrimp'},
+		{'key': 'crab', 'name': 'Cua / Ghẹ', 'kw': 'cua ghe crab'},
+		{'key': 'seafood', 'name': 'Hải sản có vỏ (Nghêu, Sò, Ốc, Mực)', 'kw': 'hai san tom cua so oc muc seafood'},
+		{'key': 'fish', 'name': 'Cá biển (Cá hồi, Cá ngừ)', 'kw': 'ca ca bien ca hoi ca ngu fish'},
+		{'key': 'tree_nuts', 'name': 'Hạt cây (Hạt điều, Hạnh nhân, Óc chó)', 'kw': 'hat dieu hanh nhan oc cho nut'},
+		{'key': 'sesame', 'name': 'Mè (Vừng / Dầu mè)', 'kw': 'me vung sesame'},
+		{'key': 'celery', 'name': 'Cần tây', 'kw': 'can tay celery'},
+		{'key': 'mustard', 'name': 'Mù tạt (Mustard)', 'kw': 'mu tat mustard'},
+		{'key': 'sulfite', 'name': 'Sulfite (Chất bảo quản thực phẩm)', 'kw': 'sulfite luu huynh'},
+		{'key': 'msg', 'name': 'Bột ngọt (Mì chính / MSG)', 'kw': 'bot ngot mi chinh msg ajinomoto'},
+		{'key': 'corn', 'name': 'Bắp (Ngô / Tinh bột bắp)', 'kw': 'bap ngo corn maize'},
+		{'key': 'yeast', 'name': 'Men (Men bánh mì, Men bia)', 'kw': 'men bia banh mi yeast'},
+		{'key': 'chili', 'name': 'Ớt / Capsaicin', 'kw': 'ot cay capsaicin chili'},
+		{'key': 'beef', 'name': 'Thịt bò (Alpha-gal)', 'kw': 'thit bo beef'},
+		{'key': 'chocolate', 'name': 'Cacao / Sô-cô-la', 'kw': 'cacao chocolate so co la'},
+	];
 
-  // Danh sách chất dị ứng (lưu xuống bảng user_allergen - chuẩn 1NF)
-  final Map<String, String> _allergyLabels = {
-    'milk': 'Sữa (Lactose / Bột sữa)',
-    'peanut': 'Đậu phộng (Lạc)',
-    'gluten': 'Gluten (Lúa mì)',
-    'soy': 'Đậu nành (Soy / Lecithin)',
-  };
-  final Set<String> _selectedAllergens = {};
+	static const List<Map<String, String>> _allNutritionSuggestions = [
+		{'key': 'sugars', 'name': 'Đường tối đa (g / 100g)', 'kw': 'duong duong tinh luyen sugar ngot do ngot'},
+		{'key': 'sodium', 'name': 'Muối / Natri tối đa (g / 100g)', 'kw': 'muoi natri sodium salt man'},
+		{'key': 'total_fat', 'name': 'Chất béo tổng tối đa (g / 100g)', 'kw': 'chat beo tong fat lipid mo dau'},
+		{'key': 'protein_min', 'name': 'Đạm tối thiểu (g / 100g)', 'kw': 'dam protein chat dam thit ca'},
+		{'key': 'calories', 'name': 'Năng lượng / Calo tối đa (kcal / 100g)', 'kw': 'nang luong calo calorie kcal energy'},
+		{'key': 'fiber', 'name': 'Chất xơ tối thiểu (g / 100g)', 'kw': 'chat xo fiber xo rau cu'},
+		{'key': 'carbs', 'name': 'Carbohydrate / Tinh bột (g / 100g)', 'kw': 'carbohydrate tinh bot carb com gao banh'},
+		{'key': 'sat_fat', 'name': 'Chất béo bão hòa tối đa (g / 100g)', 'kw': 'chat beo bao hoa saturated fat'},
+		{'key': 'trans_fat', 'name': 'Chất béo chuyển hóa / Trans fat (g / 100g)', 'kw': 'chat beo chuyen hoa trans fat beo xau'},
+		{'key': 'cholesterol', 'name': 'Cholesterol tối đa (mg / 100g)', 'kw': 'cholesterol mo mau tim mach'},
+		{'key': 'calcium', 'name': 'Canxi tối thiểu (mg / 100g)', 'kw': 'canxi calcium xuong'},
+		{'key': 'iron', 'name': 'Sắt tối thiểu (mg / 100g)', 'kw': 'sat iron bo mau'},
+		{'key': 'potassium', 'name': 'Kali (mg / 100g)', 'kw': 'kali potassium'},
+		{'key': 'vitamin_c', 'name': 'Vitamin C tối thiểu (mg / 100g)', 'kw': 'vitamin c de khang cam'},
+	];
 
-  // Các trường định lượng dinh dưỡng động (lưu dạng JSON vào nutrition_targets)
-  final Map<String, String> _nutritionLabels = {
-    'sugars': 'Đường tối đa (g / 100g)',
-    'sodium': 'Muối / Natri tối đa (g / 100g)',
-    'total_fat': 'Chất béo tổng tối đa (g / 100g)',
-    'protein_min': 'Đạm tối thiểu (g / 100g)',
-  };
-  final Map<String, TextEditingController> _nutritionControllers = {
-    'sugars': TextEditingController(),
-    'sodium': TextEditingController(),
-    'total_fat': TextEditingController(),
-    'protein_min': TextEditingController(),
-  };
+	final TextEditingController _nameController = TextEditingController();
+	final TextEditingController _allergenSearchController = TextEditingController();
+	final TextEditingController _nutritionSearchController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    // 1. READ: Đọc dữ liệu từ SQLite lên giao diện ngay khi mở màn hình
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final vm = context.read<ProfileViewModel>();
-      await vm.loadProfile();
-      _populateFormFromViewModel(vm);
-    });
-  }
+	final Map<String, String> _allergyLabels = {
+		'milk': 'Sữa (Lactose / Bột sữa)',
+		'peanut': 'Đậu phộng (Lạc)',
+		'gluten': 'Gluten (Lúa mì)',
+		'soy': 'Đậu nành (Soy / Lecithin)',
+	};
+	final Set<String> _selectedAllergens = {};
+	bool _isAddingAllergen = false;
 
-  void _populateFormFromViewModel(ProfileViewModel vm) {
-    final profile = vm.profile;
-    if (profile == null) return;
+	final Map<String, String> _nutritionLabels = {
+		'sugars': 'Đường tối đa (g / 100g)',
+		'sodium': 'Muối / Natri tối đa (g / 100g)',
+		'total_fat': 'Chất béo tổng tối đa (g / 100g)',
+		'protein_min': 'Đạm tối thiểu (g / 100g)',
+	};
+	final Map<String, TextEditingController> _nutritionControllers = {
+		'sugars': TextEditingController(),
+		'sodium': TextEditingController(),
+		'total_fat': TextEditingController(),
+		'protein_min': TextEditingController(),
+	};
+	final Set<String> _selectedNutrition = {'sugars', 'sodium', 'total_fat', 'protein_min'};
+	bool _isAddingNutrition = false;
 
-    setState(() {
-      _nameController.text = profile.name;
+	@override
+	void initState() {
+		super.initState();
+		WidgetsBinding.instance.addPostFrameCallback((_) async {
+			final vm = context.read<ProfileViewModel>();
+			await vm.loadProfile();
+			_populateFormFromViewModel(vm);
+		});
+	}
 
-      _selectedAllergens
-        ..clear()
-        ..addAll(profile.allergens);
+	void _populateFormFromViewModel(ProfileViewModel vm) {
+		final profile = vm.profile;
+		if(profile==null) return;
+		setState(() {
+			_nameController.text = profile.name;
+			_selectedAllergens
+				..clear()
+				..addAll(profile.allergens);
+			for(final code in profile.allergens) {
+				if(!_allergyLabels.containsKey(code)) {
+					final found = _allAllergenSuggestions.firstWhere(
+						(s) => s['key'] == code,
+						orElse: () => {'key': code, 'name': code},
+					);
+					_allergyLabels[code] = found['name']!;
+				}
+			}
+			_selectedNutrition.clear();
+			for(final entry in profile.nutritionTargets.entries) {
+				_selectedNutrition.add(entry.key);
+				if(!_nutritionLabels.containsKey(entry.key)) {
+					final found = _allNutritionSuggestions.firstWhere(
+						(s) => s['key'] == entry.key,
+						orElse: () => {'key': entry.key, 'name': entry.key},
+					);
+					_nutritionLabels[entry.key] = found['name']!;
+				}
+				final c = _nutritionControllers.putIfAbsent(
+					entry.key,
+					() => TextEditingController(),
+				);
+				if(entry.value == -1.0) {
+					c.text = '';
+				} else {
+					c.text = entry.value.toString();
+				}
+			}
+		});
+	}
 
-      for (final entry in _nutritionControllers.entries) {
-        final savedVal = profile.nutritionTargets[entry.key];
-        entry.value.text = savedVal != null ? savedVal.toString() : '';
-      }
-    });
-  }
+	@override
+	void dispose() {
+		_nameController.dispose();
+		_allergenSearchController.dispose();
+		_nutritionSearchController.dispose();
+		for(final c in _nutritionControllers.values) {
+			c.dispose();
+		}
+		super.dispose();
+	}
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    for (final c in _nutritionControllers.values) {
-      c.dispose();
-    }
-    super.dispose();
-  }
+	void _addAllergen(String key, String name) {
+		setState(() {
+			_allergyLabels[key] = name;
+			_selectedAllergens.add(key);
+			_allergenSearchController.clear();
+			_isAddingAllergen = false;
+		});
+	}
 
-  // 2. CREATE / UPDATE: Lưu hoặc cập nhật hồ sơ xuống SQLite
-  Future<void> _handleSaveProfile() async {
-    final Map<String, double> targets = {};
-    _nutritionControllers.forEach((key, controller) {
-      final text = controller.text.trim().replaceAll(',', '.');
-      if (text.isNotEmpty) {
-        final parsed = double.tryParse(text);
-        if (parsed != null) {
-          targets[key] = parsed;
-        }
-      }
-    });
+	void _addNutrition(String key, String name) {
+		setState(() {
+			_nutritionLabels[key] = name;
+			_nutritionControllers.putIfAbsent(key, () => TextEditingController());
+			_selectedNutrition.add(key);
+			_nutritionSearchController.clear();
+			_isAddingNutrition = false;
+		});
+	}
 
-    final vm = context.read<ProfileViewModel>();
-    final success = await vm.saveProfile(
-      name: _nameController.text,
-      allergens: _selectedAllergens.toList(),
-      nutritionTargets: targets,
-    );
+	String _normStr(String s) {
+		var r = s.toLowerCase();
+		r = r.replaceAll(RegExp(r'[àáạảãâầấậẩẫăằắặẳẵ]'), 'a');
+		r = r.replaceAll(RegExp(r'[èéẹẻẽêềếệểễ]'), 'e');
+		r = r.replaceAll(RegExp(r'[ìíịỉĩ]'), 'i');
+		r = r.replaceAll(RegExp(r'[òóọỏõôồốộổỗơờớợởỡ]'), 'o');
+		r = r.replaceAll(RegExp(r'[ùúụủũưừứựửữ]'), 'u');
+		r = r.replaceAll(RegExp(r'[ỳýỵỷỹ]'), 'y');
+		r = r.replaceAll(RegExp(r'[đĐ]'), 'd');
+		r = r.replaceAll(RegExp(r'[\u0300-\u036f]'), '');
+		return r;
+	}
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'Đã lưu hồ sơ vào SQLite thành công!'
-              : (vm.errorMessage ?? 'Có lỗi xảy ra khi lưu'),
-        ),
-        backgroundColor: success ? _primaryGreen : _dangerRed,
-      ),
-    );
-  }
+	bool _matchQuery(String text, String key, String query, [String? kw]) {
+		final q = query.trim().toLowerCase();
+		if(q.isEmpty) return true;
+		final nq = _normStr(q);
+		final nt = _normStr(text);
+		final nk = _normStr(key);
+		final nkw = kw != null ? _normStr(kw) : '';
+		return nt.contains(nq) || nk.contains(nq) || nkw.contains(nq) || text.toLowerCase().contains(q) || key.toLowerCase().contains(q);
+	}
 
-  // 3. DELETE: Hiển thị hộp thoại xác nhận và xóa hồ sơ
-  Future<void> _handleDeleteProfile() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Xóa hồ sơ ăn uống?'),
-        content: const Text(
-          'Toàn bộ tiêu chí dị ứng và mục tiêu dinh dưỡng lưu trên máy sẽ bị xóa.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _dangerRed),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Xác nhận xóa',
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+	Future<void> _handleSaveProfile() async {
+		final Map<String, double> targets = {};
+		for(final key in _selectedNutrition) {
+			final controller = _nutritionControllers[key];
+			final text = controller?.text.trim().replaceAll(',', '.') ?? '';
+			if(text.isNotEmpty) {
+				final parsed = double.tryParse(text);
+				if(parsed!=null) {
+					targets[key] = parsed;
+				} else {
+					targets[key] = -1.0;
+				}
+			} else {
+				targets[key] = -1.0;
+			}
+		}
+		final vm = context.read<ProfileViewModel>();
+		final success = await vm.saveProfile(
+			name: _nameController.text,
+			allergens: _selectedAllergens.toList(),
+			nutritionTargets: targets,
+		);
+		if(!mounted) return;
+		ScaffoldMessenger.of(context).showSnackBar(
+			SnackBar(
+				content: Text(
+					success
+						? 'Đã lưu hồ sơ vào SQLite thành công!'
+						: (vm.errorMessage ?? 'Có lỗi xảy ra khi lưu'),
+				),
+				backgroundColor: success ? _primaryGreen : _dangerRed,
+			),
+		);
+	}
 
-    if (confirmed != true || !mounted) return;
+	Future<void> _handleDeleteProfile() async {
+		final confirmed = await showDialog<bool>(
+			context: context,
+			builder: (ctx) => AlertDialog(
+				title: const Text('Xóa hồ sơ ăn uống?'),
+				content: const Text(
+					'Toàn bộ tiêu chí dị ứng và mục tiêu dinh dưỡng lưu trên máy sẽ bị xóa.',
+				),
+				actions: [
+					TextButton(
+						onPressed: () => Navigator.pop(ctx, false),
+						child: const Text('Hủy'),
+					),
+					ElevatedButton(
+						style: ElevatedButton.styleFrom(backgroundColor: _dangerRed),
+						onPressed: () => Navigator.pop(ctx, true),
+						child: const Text('Xác nhận xóa', style: TextStyle(color: Colors.white)),
+					),
+				],
+			),
+		);
+		if(confirmed!=true || !mounted) return;
+		final vm = context.read<ProfileViewModel>();
+		final success = await vm.deleteProfile();
+		if(success && mounted) {
+			setState(() {
+				_nameController.clear();
+				_selectedAllergens.clear();
+				_selectedNutrition.clear();
+				for(final c in _nutritionControllers.values) {
+					c.clear();
+				}
+			});
+			ScaffoldMessenger.of(context).showSnackBar(
+				const SnackBar(
+					content: Text('Đã xóa hồ sơ khỏi cơ sở dữ liệu!'),
+					backgroundColor: _inkText,
+				),
+			);
+		}
+	}
 
-    final vm = context.read<ProfileViewModel>();
-    final success = await vm.deleteProfile();
+	@override
+	Widget build(BuildContext context) {
+		final vm = context.watch<ProfileViewModel>();
 
-    if (success && mounted) {
-      setState(() {
-        _nameController.clear();
-        _selectedAllergens.clear();
-        for (final c in _nutritionControllers.values) {
-          c.clear();
-        }
-      });
+		return Scaffold(
+			backgroundColor: _warmBg,
+			appBar: AppBar(
+				backgroundColor: _warmBg,
+				elevation: 0,
+				title: const Text(
+					'Hồ sơ ăn uống',
+					style: TextStyle(
+						color: _inkText,
+						fontWeight: FontWeight.bold,
+						fontSize: 22,
+					),
+				),
+			),
+			body: vm.isLoading
+				? const Center(child: CircularProgressIndicator(color: _primaryGreen))
+				: ListView(
+					padding: const EdgeInsets.all(16),
+					children: [
+						_buildSectionCard(
+							title: 'Tên xưng hô',
+							child: TextField(
+								controller: _nameController,
+								decoration: const InputDecoration(
+									hintText: 'Nhập tên của bạn (VD: Trúc, Linh...)',
+									border: OutlineInputBorder(),
+									contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+								),
+							),
+						),
+						const SizedBox(height: 16),
+						_buildAiBannerCard(),
+						const SizedBox(height: 16),
+						_buildAllergenSection(),
+						const SizedBox(height: 16),
+						_buildNutritionSection(),
+						const SizedBox(height: 24),
+						ElevatedButton(
+							style: ElevatedButton.styleFrom(
+								backgroundColor: _primaryGreen,
+								padding: const EdgeInsets.symmetric(vertical: 14),
+								shape: RoundedRectangleBorder(
+									borderRadius: BorderRadius.circular(12),
+								),
+							),
+							onPressed: _handleSaveProfile,
+							child: const Text(
+								'Lưu hồ sơ',
+								style: TextStyle(
+									color: Colors.white,
+									fontSize: 16,
+									fontWeight: FontWeight.w600,
+								),
+							),
+						),
+						const SizedBox(height: 12),
+						if(vm.hasProfile)
+							OutlinedButton(
+								style: OutlinedButton.styleFrom(
+									foregroundColor: _dangerRed,
+									side: const BorderSide(color: _dangerRed),
+									padding: const EdgeInsets.symmetric(vertical: 14),
+									shape: RoundedRectangleBorder(
+										borderRadius: BorderRadius.circular(12),
+									),
+								),
+								onPressed: _handleDeleteProfile,
+								child: const Text(
+									'Xóa hồ sơ',
+									style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+								),
+							),
+					],
+				),
+		);
+	}
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đã xóa hồ sơ khỏi cơ sở dữ liệu!'),
-          backgroundColor: _inkText,
-        ),
-      );
-    }
-  }
+	Widget _buildAllergenSection() {
+		return _buildSectionCard(
+			title: 'Dị ứng thực phẩm',
+			subtitle: 'Cảnh báo đỏ tuyệt đối khi phát hiện thành phần',
+			child: Column(
+				crossAxisAlignment: CrossAxisAlignment.stretch,
+				children: [
+					..._allergyLabels.entries.map((entry) {
+						final isChecked = _selectedAllergens.contains(entry.key);
+						return Padding(
+							padding: const EdgeInsets.symmetric(vertical: 2),
+							child: Container(
+								decoration: BoxDecoration(
+									color: isChecked ? _softGreenBg.withValues(alpha: 0.5) : Colors.transparent,
+									borderRadius: BorderRadius.circular(10),
+								),
+								child: Row(
+									children: [
+										Checkbox(
+											value: isChecked,
+											activeColor: _primaryGreen,
+											onChanged: (val) {
+												setState(() {
+													if(val==true) {
+														_selectedAllergens.add(entry.key);
+													} else {
+														_selectedAllergens.remove(entry.key);
+													}
+												});
+											},
+										),
+										Expanded(
+											child: GestureDetector(
+												behavior: HitTestBehavior.opaque,
+												onTap: () {
+													setState(() {
+														if(isChecked) {
+															_selectedAllergens.remove(entry.key);
+														} else {
+															_selectedAllergens.add(entry.key);
+														}
+													});
+												},
+												child: Text(
+													entry.value,
+													style: TextStyle(
+														color: isChecked ? _primaryGreen : _inkText,
+														fontSize: 15,
+														fontWeight: isChecked ? FontWeight.w600 : FontWeight.normal,
+													),
+												),
+											),
+										),
+										IconButton(
+											icon: const Icon(Icons.close, size: 18, color: _subText),
+											tooltip: 'Bỏ thành phần này',
+											onPressed: () {
+												setState(() {
+													_allergyLabels.remove(entry.key);
+													_selectedAllergens.remove(entry.key);
+												});
+											},
+										),
+									],
+								),
+							),
+						);
+					}),
+					const SizedBox(height: 10),
+					if(!_isAddingAllergen)
+						InkWell(
+							onTap: () {
+								setState(() {
+									_isAddingAllergen = true;
+									_allergenSearchController.clear();
+								});
+							},
+							borderRadius: BorderRadius.circular(10),
+							child: Container(
+								padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+								decoration: BoxDecoration(
+									border: Border.all(color: _primaryGreen.withValues(alpha: 0.3)),
+									borderRadius: BorderRadius.circular(10),
+									color: _softGreenBg.withValues(alpha: 0.4),
+								),
+								child: const Row(
+									mainAxisAlignment: MainAxisAlignment.center,
+									children: [
+										Icon(Icons.add, color: _primaryGreen, size: 20),
+										SizedBox(width: 8),
+										Text(
+											'Thêm thành phần dị ứng',
+											style: TextStyle(
+												color: _primaryGreen,
+												fontWeight: FontWeight.w600,
+												fontSize: 14,
+											),
+										),
+									],
+								),
+							),
+						)
+					else
+						Container(
+							padding: const EdgeInsets.all(12),
+							decoration: BoxDecoration(
+								color: Colors.white,
+								border: Border.all(color: _primaryGreen.withValues(alpha: 0.5)),
+								borderRadius: BorderRadius.circular(12),
+								boxShadow: [
+									BoxShadow(
+										color: Colors.black.withValues(alpha: 0.05),
+										blurRadius: 6,
+										offset: const Offset(0, 2),
+									),
+								],
+							),
+							child: Column(
+								crossAxisAlignment: CrossAxisAlignment.start,
+								children: [
+									Row(
+										children: [
+											Expanded(
+												child: TextField(
+													controller: _allergenSearchController,
+													autofocus: true,
+													decoration: const InputDecoration(
+														hintText: 'Gõ tên thành phần dị ứng...',
+														isDense: true,
+														prefixIcon: Icon(Icons.search, size: 20),
+														border: OutlineInputBorder(),
+														contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+													),
+													onChanged: (_) => setState(() {}),
+													onSubmitted: (val) {
+														if(val.trim().isNotEmpty) {
+															_addAllergen(
+																'custom_allg_${DateTime.now().millisecondsSinceEpoch}',
+																val.trim(),
+															);
+														}
+													},
+												),
+											),
+											const SizedBox(width: 6),
+											IconButton(
+												icon: const Icon(Icons.close, color: _subText),
+												tooltip: 'Đóng',
+												onPressed: () {
+													setState(() {
+														_isAddingAllergen = false;
+														_allergenSearchController.clear();
+													});
+												},
+											),
+										],
+									),
+									Builder(
+										builder: (context) {
+											final query = _allergenSearchController.text.trim();
+											final suggestions = _allAllergenSuggestions.where((item) {
+												return _matchQuery(item['name']!, item['key']!, query, item['kw']);
+											}).toList();
 
-  @override
-  Widget build(BuildContext context) {
-    final vm = context.watch<ProfileViewModel>();
+											return Container(
+												constraints: const BoxConstraints(maxHeight: 180),
+												margin: const EdgeInsets.only(top: 8),
+												decoration: BoxDecoration(
+													color: _warmBg,
+													borderRadius: BorderRadius.circular(8),
+													border: Border.all(color: Colors.black12),
+												),
+												child: ListView(
+													shrinkWrap: true,
+													padding: EdgeInsets.zero,
+													children: [
+														if(query.isNotEmpty &&
+																!suggestions.any((s) => _normStr(s['name']!) == _normStr(query)))
+															ListTile(
+																dense: true,
+																leading: const Icon(Icons.add_circle, color: _primaryGreen, size: 20),
+																title: Text(
+																	'Thêm mới: "${_allergenSearchController.text.trim()}"',
+																	style: const TextStyle(
+																		color: _primaryGreen,
+																		fontWeight: FontWeight.bold,
+																		fontSize: 13,
+																	),
+																),
+																onTap: () {
+																	final customText = _allergenSearchController.text.trim();
+																	_addAllergen(
+																		'custom_allg_${DateTime.now().millisecondsSinceEpoch}',
+																		customText,
+																	);
+																},
+															),
+														...suggestions.map((item) {
+															final isAlreadyAdded = _allergyLabels.containsKey(item['key']);
+															return ListTile(
+																dense: true,
+																leading: Icon(
+																	isAlreadyAdded ? Icons.check : Icons.add_circle_outline,
+																	color: isAlreadyAdded ? _subText : _primaryGreen,
+																	size: 20,
+																),
+																title: Text(
+																	item['name']!,
+																	style: TextStyle(
+																		fontSize: 13,
+																		color: isAlreadyAdded ? _subText : _inkText,
+																		fontWeight: isAlreadyAdded ? FontWeight.normal : FontWeight.w500,
+																	),
+																),
+																subtitle: isAlreadyAdded
+																	? const Text('Đã có trong danh sách',
+																			style: TextStyle(fontSize: 11, color: _subText))
+																	: null,
+																onTap: () {
+																	_addAllergen(item['key']!, item['name']!);
+																},
+															);
+														}),
+													],
+												),
+											);
+										},
+									),
+								],
+							),
+						),
+				],
+			),
+		);
+	}
 
-    return Scaffold(
-      backgroundColor: _warmBg,
-      appBar: AppBar(
-        backgroundColor: _warmBg,
-        elevation: 0,
-        title: const Text(
-          'Hồ sơ ăn uống',
-          style: TextStyle(
-            color: _inkText,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
-      ),
-      body: vm.isLoading
-          ? const Center(child: CircularProgressIndicator(color: _primaryGreen))
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // Khối 1: Tên xưng hô
-                _buildSectionCard(
-                  title: 'Tên xưng hô',
-                  child: TextField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      hintText: 'Nhập tên của bạn (VD: Trúc, Linh...)',
-                      border: OutlineInputBorder(),
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
+	Widget _buildNutritionSection() {
+		return _buildSectionCard(
+			title: 'Nhu cầu dinh dưỡng cá nhân',
+			subtitle: 'Để trống định lượng = Tùy ý (không quan trọng mức nạp)',
+			child: Column(
+				crossAxisAlignment: CrossAxisAlignment.stretch,
+				children: [
+					..._nutritionLabels.entries.map((entry) {
+						final isChecked = _selectedNutrition.contains(entry.key);
+						final controller = _nutritionControllers.putIfAbsent(
+							entry.key,
+							() => TextEditingController(),
+						);
 
-                // Khối 2: Thẻ giao diện AI (Chỉ hiển thị UI, chưa gắn chức năng)
-                _buildAiBannerCard(),
-                const SizedBox(height: 16),
+						return Container(
+							margin: const EdgeInsets.only(bottom: 12),
+							padding: const EdgeInsets.all(12),
+							decoration: BoxDecoration(
+								color: isChecked ? _softGreenBg.withValues(alpha: 0.35) : Colors.grey.shade50,
+								borderRadius: BorderRadius.circular(12),
+								border: Border.all(
+									color: isChecked ? _primaryGreen.withValues(alpha: 0.3) : Colors.black12,
+								),
+							),
+							child: Column(
+								crossAxisAlignment: CrossAxisAlignment.start,
+								children: [
+									Row(
+										children: [
+											Checkbox(
+												value: isChecked,
+												activeColor: _primaryGreen,
+												onChanged: (val) {
+													setState(() {
+														if(val==true) {
+															_selectedNutrition.add(entry.key);
+														} else {
+															_selectedNutrition.remove(entry.key);
+														}
+													});
+												},
+											),
+											Expanded(
+												child: GestureDetector(
+													behavior: HitTestBehavior.opaque,
+													onTap: () {
+														setState(() {
+															if(isChecked) {
+																_selectedNutrition.remove(entry.key);
+															} else {
+																_selectedNutrition.add(entry.key);
+															}
+														});
+													},
+													child: Text(
+														entry.value,
+														style: TextStyle(
+															color: isChecked ? _primaryGreen : _inkText,
+															fontSize: 15,
+															fontWeight: isChecked ? FontWeight.w600 : FontWeight.w500,
+														),
+													),
+												),
+											),
+											IconButton(
+												icon: const Icon(Icons.close, size: 18, color: _subText),
+												tooltip: 'Bỏ tiêu chí này',
+												onPressed: () {
+													setState(() {
+														_nutritionLabels.remove(entry.key);
+														_nutritionControllers[entry.key]?.dispose();
+														_nutritionControllers.remove(entry.key);
+														_selectedNutrition.remove(entry.key);
+													});
+												},
+											),
+										],
+									),
+									const SizedBox(height: 6),
+									TextField(
+										controller: controller,
+										enabled: isChecked,
+										keyboardType: const TextInputType.numberWithOptions(decimal: true),
+										decoration: InputDecoration(
+											isDense: true,
+											hintText: 'Để trống = Tùy ý (không giới hạn)',
+											hintStyle: TextStyle(
+												fontSize: 13,
+												color: isChecked ? Colors.black38 : Colors.black26,
+												fontStyle: FontStyle.italic,
+											),
+											labelText: 'Mức định lượng',
+											labelStyle: TextStyle(
+												fontSize: 13,
+												color: isChecked ? _primaryGreen : _subText,
+											),
+											border: const OutlineInputBorder(),
+											contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+											filled: !isChecked,
+											fillColor: Colors.grey.shade100,
+										),
+										onChanged: (val) {
+											if(!isChecked && val.trim().isNotEmpty) {
+												setState(() {
+													_selectedNutrition.add(entry.key);
+												});
+											}
+										},
+									),
+								],
+							),
+						);
+					}),
+					const SizedBox(height: 4),
+					if(!_isAddingNutrition)
+						InkWell(
+							onTap: () {
+								setState(() {
+									_isAddingNutrition = true;
+									_nutritionSearchController.clear();
+								});
+							},
+							borderRadius: BorderRadius.circular(10),
+							child: Container(
+								padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+								decoration: BoxDecoration(
+									border: Border.all(color: _primaryGreen.withValues(alpha: 0.3)),
+									borderRadius: BorderRadius.circular(10),
+									color: _softGreenBg.withValues(alpha: 0.4),
+								),
+								child: const Row(
+									mainAxisAlignment: MainAxisAlignment.center,
+									children: [
+										Icon(Icons.add, color: _primaryGreen, size: 20),
+										SizedBox(width: 8),
+										Text(
+											'Thêm nhu cầu dinh dưỡng',
+											style: TextStyle(
+												color: _primaryGreen,
+												fontWeight: FontWeight.w600,
+												fontSize: 14,
+											),
+										),
+									],
+								),
+							),
+						)
+					else
+						Container(
+							padding: const EdgeInsets.all(12),
+							decoration: BoxDecoration(
+								color: Colors.white,
+								border: Border.all(color: _primaryGreen.withValues(alpha: 0.5)),
+								borderRadius: BorderRadius.circular(12),
+								boxShadow: [
+									BoxShadow(
+										color: Colors.black.withValues(alpha: 0.05),
+										blurRadius: 6,
+										offset: const Offset(0, 2),
+									),
+								],
+							),
+							child: Column(
+								crossAxisAlignment: CrossAxisAlignment.start,
+								children: [
+									Row(
+										children: [
+											Expanded(
+												child: TextField(
+													controller: _nutritionSearchController,
+													autofocus: true,
+													decoration: const InputDecoration(
+														hintText: 'Gõ tên chất dinh dưỡng...',
+														isDense: true,
+														prefixIcon: Icon(Icons.search, size: 20),
+														border: OutlineInputBorder(),
+														contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+													),
+													onChanged: (_) => setState(() {}),
+													onSubmitted: (val) {
+														if(val.trim().isNotEmpty) {
+															_addNutrition(
+																'custom_nutr_${DateTime.now().millisecondsSinceEpoch}',
+																val.trim(),
+															);
+														}
+													},
+												),
+											),
+											const SizedBox(width: 6),
+											IconButton(
+												icon: const Icon(Icons.close, color: _subText),
+												tooltip: 'Đóng',
+												onPressed: () {
+													setState(() {
+														_isAddingNutrition = false;
+														_nutritionSearchController.clear();
+													});
+												},
+											),
+										],
+									),
+									Builder(
+										builder: (context) {
+											final query = _nutritionSearchController.text.trim();
+											final suggestions = _allNutritionSuggestions.where((item) {
+												return _matchQuery(item['name']!, item['key']!, query, item['kw']);
+											}).toList();
 
-                // Khối 3: Dị ứng thực phẩm (bảng user_allergen)
-                _buildSectionCard(
-                  title: 'Dị ứng thực phẩm',
-                  subtitle: 'Cảnh báo đỏ tuyệt đối khi phát hiện thành phần',
-                  child: Column(
-                    children: _allergyLabels.entries.map((entry) {
-                      final isChecked = _selectedAllergens.contains(entry.key);
-                      return GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          setState(() {
-                            if (isChecked) {
-                              _selectedAllergens.remove(entry.key);
-                            } else {
-                              _selectedAllergens.add(entry.key);
-                            }
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  entry.value,
-                                  style: const TextStyle(
-                                      color: _inkText, fontSize: 15),
-                                ),
-                              ),
-                              Checkbox(
-                                value: isChecked,
-                                activeColor: _primaryGreen,
-                                onChanged: (val) {
-                                  setState(() {
-                                    if (val == true) {
-                                      _selectedAllergens.add(entry.key);
-                                    } else {
-                                      _selectedAllergens.remove(entry.key);
-                                    }
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 16),
+											return Container(
+												constraints: const BoxConstraints(maxHeight: 180),
+												margin: const EdgeInsets.only(top: 8),
+												decoration: BoxDecoration(
+													color: _warmBg,
+													borderRadius: BorderRadius.circular(8),
+													border: Border.all(color: Colors.black12),
+												),
+												child: ListView(
+													shrinkWrap: true,
+													padding: EdgeInsets.zero,
+													children: [
+														if(query.isNotEmpty &&
+																!suggestions.any((s) => _normStr(s['name']!) == _normStr(query)))
+															ListTile(
+																dense: true,
+																leading: const Icon(Icons.add_circle, color: _primaryGreen, size: 20),
+																title: Text(
+																	'Thêm mới: "${_nutritionSearchController.text.trim()}"',
+																	style: const TextStyle(
+																		color: _primaryGreen,
+																		fontWeight: FontWeight.bold,
+																		fontSize: 13,
+																	),
+																),
+																onTap: () {
+																	final customText = _nutritionSearchController.text.trim();
+																	_addNutrition(
+																		'custom_nutr_${DateTime.now().millisecondsSinceEpoch}',
+																		customText,
+																	);
+																},
+															),
+														...suggestions.map((item) {
+															final isAlreadyAdded = _nutritionLabels.containsKey(item['key']);
+															return ListTile(
+																dense: true,
+																leading: Icon(
+																	isAlreadyAdded ? Icons.check : Icons.add_circle_outline,
+																	color: isAlreadyAdded ? _subText : _primaryGreen,
+																	size: 20,
+																),
+																title: Text(
+																	item['name']!,
+																	style: TextStyle(
+																		fontSize: 13,
+																		color: isAlreadyAdded ? _subText : _inkText,
+																		fontWeight: isAlreadyAdded ? FontWeight.normal : FontWeight.w500,
+																	),
+																),
+																subtitle: isAlreadyAdded
+																	? const Text('Đã có trong danh sách',
+																			style: TextStyle(fontSize: 11, color: _subText))
+																	: null,
+																onTap: () {
+																	_addNutrition(item['key']!, item['name']!);
+																},
+															);
+														}),
+													],
+												),
+											);
+										},
+									),
+								],
+							),
+						),
+				],
+			),
+		);
+	}
 
-                // Khối 4: Mục tiêu dinh dưỡng định lượng (JSON động)
-                _buildSectionCard(
-                  title: 'Nhu cầu dinh dưỡng cá nhân',
-                  subtitle: 'Để trống nếu không giới hạn chỉ số đó',
-                  child: Column(
-                    children: _nutritionLabels.entries.map((entry) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: TextField(
-                          controller: _nutritionControllers[entry.key],
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          decoration: InputDecoration(
-                            labelText: entry.value,
-                            hintText: 'VD: 10.0',
-                            border: const OutlineInputBorder(),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 24),
+	Widget _buildAiBannerCard() {
+		return Container(
+			padding: const EdgeInsets.all(16),
+			decoration: BoxDecoration(
+				color: _softGreenBg,
+				borderRadius: BorderRadius.circular(16),
+				border: Border.all(color: _primaryGreen.withValues(alpha: 0.25)),
+			),
+			child: Row(
+				children: [
+					Container(
+						padding: const EdgeInsets.all(10),
+						decoration: BoxDecoration(
+							color: _primaryGreen,
+							borderRadius: BorderRadius.circular(12),
+						),
+						child: const Icon(
+							Icons.auto_awesome_rounded,
+							color: Colors.white,
+							size: 22,
+						),
+					),
+					const SizedBox(width: 14),
+					const Expanded(
+						child: Column(
+							crossAxisAlignment: CrossAxisAlignment.start,
+							children: [
+								Text(
+									'Thiết lập nhanh bằng AI',
+									style: TextStyle(
+										color: _inkText,
+										fontSize: 16,
+										fontWeight: FontWeight.bold,
+									),
+								),
+								SizedBox(height: 3),
+								Text(
+									'Nhập mô tả thói quen ăn uống để tự động gợi ý tiêu chí dinh dưỡng',
+									style: TextStyle(
+										color: _subText,
+										fontSize: 13,
+									),
+								),
+							],
+						),
+					),
+					const SizedBox(width: 8),
+					const Icon(
+						Icons.chevron_right_rounded,
+						color: _primaryGreen,
+					),
+				],
+			),
+		);
+	}
 
-                // Nút Lưu hồ sơ (Create / Update)
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryGreen,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: _handleSaveProfile,
-                  child: const Text(
-                    'Lưu hồ sơ',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Nút Xóa hồ sơ (Delete)
-                if (vm.hasProfile)
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: _dangerRed,
-                      side: const BorderSide(color: _dangerRed),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: _handleDeleteProfile,
-                    child: const Text(
-                      'Xóa hồ sơ',
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-              ],
-            ),
-    );
-  }
-
-  // Thẻ tính năng AI phân tích ghi chú tự do (chỉ hiển thị giao diện)
-  Widget _buildAiBannerCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _softGreenBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _primaryGreen.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: _primaryGreen,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.auto_awesome_rounded,
-              color: Colors.white,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Thiết lập nhanh bằng AI',
-                  style: TextStyle(
-                    color: _inkText,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  'Nhập mô tả thói quen ăn uống để tự động gợi ý tiêu chí dinh dưỡng',
-                  style: TextStyle(
-                    color: _subText,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Icon(
-            Icons.chevron_right_rounded,
-            color: _primaryGreen,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionCard({
-    required String title,
-    String? subtitle,
-    required Widget child,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: _inkText,
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: const TextStyle(color: _subText, fontSize: 13),
-            ),
-          ],
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
-    );
-  }
+	Widget _buildSectionCard({
+		required String title,
+		String? subtitle,
+		required Widget child,
+	}) {
+		return Container(
+			padding: const EdgeInsets.all(16),
+			decoration: BoxDecoration(
+				color: Colors.white,
+				borderRadius: BorderRadius.circular(16),
+				border: Border.all(color: Colors.black12),
+			),
+			child: Column(
+				crossAxisAlignment: CrossAxisAlignment.start,
+				children: [
+					Text(
+						title,
+						style: const TextStyle(
+							color: _inkText,
+							fontSize: 17,
+							fontWeight: FontWeight.bold,
+						),
+					),
+					if(subtitle!=null)...[
+						const SizedBox(height: 4),
+						Text(
+							subtitle,
+							style: const TextStyle(color: _subText, fontSize: 13),
+						),
+					],
+					const SizedBox(height: 12),
+					child,
+				],
+			),
+		);
+	}
 }
