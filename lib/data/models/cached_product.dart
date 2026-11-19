@@ -65,4 +65,32 @@ class CachedProduct {
       cachedAt: map['cached_at'] as String,
     );
   }
+
+  CachedProduct copyWith({
+    int? id,
+    String? barcode,
+    String? productName,
+    String? brand,
+    String? imageUrl,
+    String? ingredientsText,
+    String? servingSize,
+    String? nutriscoreGrade,
+    bool? isIncomplete,
+    List<String>? missingFields,
+    String? cachedAt,
+  }) {
+    return CachedProduct(
+      id: id ?? this.id,
+      barcode: barcode ?? this.barcode,
+      productName: productName ?? this.productName,
+      brand: brand ?? this.brand,
+      imageUrl: imageUrl ?? this.imageUrl,
+      ingredientsText: ingredientsText ?? this.ingredientsText,
+      servingSize: servingSize ?? this.servingSize,
+      nutriscoreGrade: nutriscoreGrade ?? this.nutriscoreGrade,
+      isIncomplete: isIncomplete ?? this.isIncomplete,
+      missingFields: missingFields ?? this.missingFields,
+      cachedAt: cachedAt ?? this.cachedAt,
+    );
+  }
 }

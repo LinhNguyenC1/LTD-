@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../business_logic/viewmodels/auth_viewmodel.dart';
 import '../../../business_logic/viewmodels/profile_viewmodel.dart';
+import '../../../core/validators/form_validator.dart';
+import '../auth/login_page.dart';
 
 class ProfilePage extends StatefulWidget {
 	const ProfilePage({super.key});
@@ -57,6 +60,7 @@ class _ProfilePageState extends State<ProfilePage> {
 		{'key': 'vitamin_c', 'name': 'Vitamin C tối thiểu (mg / 100g)', 'kw': 'vitamin c de khang cam'},
 	];
 
+	final _formKey = GlobalKey<FormState>();
 	final TextEditingController _nameController = TextEditingController();
 	final TextEditingController _allergenSearchController = TextEditingController();
 	final TextEditingController _nutritionSearchController = TextEditingController();
@@ -189,24 +193,24 @@ class _ProfilePageState extends State<ProfilePage> {
 	}
 
 	Future<void> _handleSaveProfile() async {
+		FocusScope.of(context).unfocus();
+		if (_formKey.currentState == null || !_formKey.currentState!.validate()) {
+			return;
+		}
 		final Map<String, double> targets = {};
 		for(final key in _selectedNutrition) {
 			final controller = _nutritionControllers[key];
 			final text = controller?.text.trim().replaceAll(',', '.') ?? '';
 			if(text.isNotEmpty) {
 				final parsed = double.tryParse(text);
-				if(parsed!=null) {
+				if(parsed!=null && parsed > 0) {
 					targets[key] = parsed;
-				} else {
-					targets[key] = -1.0;
 				}
-			} else {
-				targets[key] = -1.0;
 			}
 		}
 		final vm = context.read<ProfileViewModel>();
 		final success = await vm.saveProfile(
-			name: _nameController.text,
+			name: _nameController.text.trim(),
 			allergens: _selectedAllergens.toList(),
 			nutritionTargets: targets,
 		);
@@ -285,63 +289,71 @@ class _ProfilePageState extends State<ProfilePage> {
 			),
 			body: vm.isLoading
 				? const Center(child: CircularProgressIndicator(color: _primaryGreen))
-				: ListView(
-					padding: const EdgeInsets.all(16),
-					children: [
-						_buildSectionCard(
-							title: 'Tên xưng hô',
-							child: TextField(
-								controller: _nameController,
-								decoration: const InputDecoration(
-									hintText: 'Nhập tên của bạn (VD: Trúc, Linh...)',
-									border: OutlineInputBorder(),
-									contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+				: Form(
+					key: _formKey,
+					child: ListView(
+						padding: const EdgeInsets.all(16),
+						children: [
+							_buildAccountCard(context),
+							const SizedBox(height: 16),
+							_buildSectionCard(
+								title: 'Tên xưng hô',
+								child: TextFormField(
+									key: const Key('profile_name_field'),
+									controller: _nameController,
+									decoration: const InputDecoration(
+										hintText: 'Nhập tên của bạn (VD: Trúc, Linh...)',
+										border: OutlineInputBorder(),
+										contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+									),
+									validator: FormValidator.validateName,
 								),
 							),
-						),
-						const SizedBox(height: 16),
-						_buildAiBannerCard(),
-						const SizedBox(height: 16),
-						_buildAllergenSection(),
-						const SizedBox(height: 16),
-						_buildNutritionSection(),
-						const SizedBox(height: 24),
-						ElevatedButton(
-							style: ElevatedButton.styleFrom(
-								backgroundColor: _primaryGreen,
-								padding: const EdgeInsets.symmetric(vertical: 14),
-								shape: RoundedRectangleBorder(
-									borderRadius: BorderRadius.circular(12),
-								),
-							),
-							onPressed: _handleSaveProfile,
-							child: const Text(
-								'Lưu hồ sơ',
-								style: TextStyle(
-									color: Colors.white,
-									fontSize: 16,
-									fontWeight: FontWeight.w600,
-								),
-							),
-						),
-						const SizedBox(height: 12),
-						if(vm.hasProfile)
-							OutlinedButton(
-								style: OutlinedButton.styleFrom(
-									foregroundColor: _dangerRed,
-									side: const BorderSide(color: _dangerRed),
+							const SizedBox(height: 16),
+							_buildAiBannerCard(),
+							const SizedBox(height: 16),
+							_buildAllergenSection(),
+							const SizedBox(height: 16),
+							_buildNutritionSection(),
+							const SizedBox(height: 24),
+							ElevatedButton(
+								key: const Key('profile_save_button'),
+								style: ElevatedButton.styleFrom(
+									backgroundColor: _primaryGreen,
 									padding: const EdgeInsets.symmetric(vertical: 14),
 									shape: RoundedRectangleBorder(
 										borderRadius: BorderRadius.circular(12),
 									),
 								),
-								onPressed: _handleDeleteProfile,
+								onPressed: _handleSaveProfile,
 								child: const Text(
-									'Xóa hồ sơ',
-									style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+									'Lưu hồ sơ',
+									style: TextStyle(
+										color: Colors.white,
+										fontSize: 16,
+										fontWeight: FontWeight.w600,
+									),
 								),
 							),
-					],
+							const SizedBox(height: 12),
+							if(vm.hasProfile)
+								OutlinedButton(
+									style: OutlinedButton.styleFrom(
+										foregroundColor: _dangerRed,
+										side: const BorderSide(color: _dangerRed),
+										padding: const EdgeInsets.symmetric(vertical: 14),
+										shape: RoundedRectangleBorder(
+											borderRadius: BorderRadius.circular(12),
+										),
+									),
+									onPressed: _handleDeleteProfile,
+									child: const Text(
+										'Xóa hồ sơ',
+										style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+									),
+								),
+						],
+					),
 				),
 		);
 	}
@@ -661,7 +673,8 @@ class _ProfilePageState extends State<ProfilePage> {
 										],
 									),
 									const SizedBox(height: 6),
-									TextField(
+									TextFormField(
+										key: Key('profile_target_${entry.key}'),
 										controller: controller,
 										enabled: isChecked,
 										keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -683,6 +696,10 @@ class _ProfilePageState extends State<ProfilePage> {
 											filled: !isChecked,
 											fillColor: Colors.grey.shade100,
 										),
+										validator: (val) {
+											if (!isChecked) return null;
+											return FormValidator.validatePositiveNumber(val, required: false);
+										},
 										onChanged: (val) {
 											if(!isChecked && val.trim().isNotEmpty) {
 												setState(() {
@@ -916,6 +933,121 @@ class _ProfilePageState extends State<ProfilePage> {
 					),
 				],
 			),
+		);
+	}
+
+	Widget _buildAccountCard(BuildContext context) {
+		final authVm = context.watch<AuthViewModel?>();
+		final isAuth = authVm?.isAuthenticated ?? false;
+		final user = authVm?.currentUser;
+
+		return Container(
+			padding: const EdgeInsets.all(16),
+			decoration: BoxDecoration(
+				color: Colors.white,
+				borderRadius: BorderRadius.circular(16),
+				border: Border.all(color: Colors.black12),
+			),
+			child: isAuth
+				? Row(
+					children: [
+						const CircleAvatar(
+							radius: 22,
+							backgroundColor: _softGreenBg,
+							child: Icon(Icons.person, color: _primaryGreen, size: 26),
+						),
+						const SizedBox(width: 14),
+						Expanded(
+							child: Column(
+								crossAxisAlignment: CrossAxisAlignment.start,
+								children: [
+									Text(
+										user?.username ?? '',
+										style: const TextStyle(
+											fontSize: 16,
+											fontWeight: FontWeight.bold,
+											color: _inkText,
+										),
+									),
+									const SizedBox(height: 2),
+									Text(
+										user?.email ?? '',
+										style: const TextStyle(
+											fontSize: 13,
+											color: _subText,
+										),
+									),
+								],
+							),
+						),
+						OutlinedButton(
+							key: const Key('profile_logout_button'),
+							style: OutlinedButton.styleFrom(
+								foregroundColor: _dangerRed,
+								side: const BorderSide(color: _dangerRed),
+								shape: RoundedRectangleBorder(
+									borderRadius: BorderRadius.circular(8),
+								),
+								padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+							),
+							onPressed: () async {
+								await authVm?.logout();
+							},
+							child: const Text('Đăng xuất'),
+						),
+					],
+				)
+				: Row(
+					children: [
+						const CircleAvatar(
+							radius: 22,
+							backgroundColor: Color(0xFFF0F4F1),
+							child: Icon(Icons.person_outline, color: _subText, size: 26),
+						),
+						const SizedBox(width: 14),
+						const Expanded(
+							child: Column(
+								crossAxisAlignment: CrossAxisAlignment.start,
+								children: [
+									Text(
+										'Chưa đăng nhập',
+										style: TextStyle(
+											fontSize: 15,
+											fontWeight: FontWeight.bold,
+											color: _inkText,
+										),
+									),
+									SizedBox(height: 2),
+									Text(
+										'Đăng nhập để đồng bộ tài khoản',
+										style: TextStyle(
+											fontSize: 12,
+											color: _subText,
+										),
+									),
+								],
+							),
+						),
+						ElevatedButton(
+							key: const Key('profile_login_button'),
+							style: ElevatedButton.styleFrom(
+								backgroundColor: _primaryGreen,
+								foregroundColor: Colors.white,
+								shape: RoundedRectangleBorder(
+									borderRadius: BorderRadius.circular(8),
+								),
+								padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+							),
+							onPressed: () {
+								Navigator.push(
+									context,
+									MaterialPageRoute(builder: (_) => const LoginPage()),
+								);
+							},
+							child: const Text('Đăng nhập / Đăng ký'),
+						),
+					],
+				),
 		);
 	}
 

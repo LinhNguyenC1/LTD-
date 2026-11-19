@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'business_logic/viewmodels/auth_viewmodel.dart';
 import 'business_logic/viewmodels/profile_viewmodel.dart';
+import 'business_logic/viewmodels/search_viewmodel.dart';
+import 'business_logic/viewmodels/scan_viewmodel.dart';
 import 'data/models/food.dart';
 import 'core/theme/app_theme.dart';
+import 'presentation/screens/auth/login_page.dart';
+import 'presentation/screens/auth/register_page.dart';
 import 'presentation/screens/home/home_page.dart';
+import 'presentation/screens/home/search_page.dart';
 import 'presentation/screens/scan/scan_page.dart';
 import 'presentation/screens/history/history_page.dart';
 import 'presentation/screens/profile/profile_page.dart';
@@ -23,13 +29,27 @@ class AnLanhApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
+          create: (_) => AuthViewModel()..loadCurrentUser(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SearchViewModel()..search(''),
+        ),
+        ChangeNotifierProvider(
           create: (_) => ProfileViewModel()..loadProfile(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ScanViewModel(),
         ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Ăn Lành',
         theme: buildAppTheme(),
+        routes: {
+          '/login': (_) => const LoginPage(),
+          '/register': (_) => const RegisterPage(),
+          '/search': (_) => const SearchPage(),
+        },
         home: const Shell(),
       ),
     );

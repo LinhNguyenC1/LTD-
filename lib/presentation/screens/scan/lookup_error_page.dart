@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
 class LookupErrorPage extends StatelessWidget {
-  const LookupErrorPage({super.key});
+  final String barcode;
+  final String? errorMessage;
+  final VoidCallback? onRetry;
+
+  const LookupErrorPage({
+    super.key,
+    this.barcode = '8930000000999',
+    this.errorMessage,
+    this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,16 +43,20 @@ class LookupErrorPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.qr_code, size: 16, color: subText),
-              SizedBox(width: 6),
-              Text('8930000000999',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: subText)),
+              const Icon(Icons.qr_code, size: 16, color: subText),
+              const SizedBox(width: 6),
+              Text(
+                barcode,
+                key: const Key('error_barcode_text'),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: subText,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -54,10 +67,11 @@ class LookupErrorPage extends StatelessWidget {
                 fontSize: 24, fontWeight: FontWeight.w900, height: 1.2),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Có thể mạng đang gián đoạn hoặc nguồn dữ liệu tạm thời không phản hồi. Chưa thể biết sản phẩm có trong nguồn dữ liệu hay không.',
+          Text(
+            errorMessage ??
+                'Có thể mạng đang gián đoạn hoặc nguồn dữ liệu tạm thời không phản hồi. Chưa thể biết sản phẩm có trong nguồn dữ liệu hay không.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: inkText, height: 1.4),
+            style: const TextStyle(fontSize: 13, color: inkText, height: 1.4),
           ),
           const SizedBox(height: 20),
 
@@ -113,7 +127,13 @@ class LookupErrorPage extends StatelessWidget {
           const SizedBox(height: 24),
 
           FilledButton.icon(
-            onPressed: () => Navigator.pop(context),
+            key: const Key('error_retry_button'),
+            onPressed: () {
+              if (onRetry != null) {
+                onRetry!();
+              }
+              Navigator.pop(context);
+            },
             icon: const Icon(Icons.refresh),
             label: const Text('Thử tra cứu lại'),
             style: FilledButton.styleFrom(

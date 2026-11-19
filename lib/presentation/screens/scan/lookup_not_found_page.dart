@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
 class LookupNotFoundPage extends StatelessWidget {
-  const LookupNotFoundPage({super.key});
+  final String barcode;
+
+  const LookupNotFoundPage({
+    super.key,
+    this.barcode = '8930000000999',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,16 +39,20 @@ class LookupNotFoundPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.qr_code, size: 16, color: subText),
-              SizedBox(width: 6),
-              Text('8930000000999',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: subText)),
+              const Icon(Icons.qr_code, size: 16, color: subText),
+              const SizedBox(width: 6),
+              Text(
+                barcode,
+                key: const Key('not_found_barcode_text'),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: subText,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -113,6 +122,7 @@ class LookupNotFoundPage extends StatelessWidget {
           const SizedBox(height: 24),
 
           FilledButton.icon(
+            key: const Key('not_found_rescan_button'),
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.qr_code_scanner),
             label: const Text('Quét lại mã vạch'),

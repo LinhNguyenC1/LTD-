@@ -3,7 +3,10 @@ import '../../data/models/user_profile.dart';
 import '../../data/repositories/profile_repository.dart';
 
 class ProfileViewModel extends ChangeNotifier {
-  final ProfileRepository _repository = ProfileRepository();
+  final ProfileRepository _repository;
+
+  ProfileViewModel({ProfileRepository? profileRepository})
+      : _repository = profileRepository ?? ProfileRepository();
 
   UserProfile? _profile;
   bool _isLoading = false;

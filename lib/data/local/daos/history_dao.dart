@@ -2,7 +2,15 @@ import '../db_helper.dart';
 import '../../models/scan_history_item.dart';
 
 class HistoryDao {
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  final DatabaseHelper _dbHelper;
+
+  HistoryDao({DatabaseHelper? dbHelper})
+      : _dbHelper = dbHelper ?? DatabaseHelper.instance;
+
+  Future<int> insertHistoryItem(ScanHistoryItem item) async {
+    final db = await _dbHelper.database;
+    return await db.insert('scan_history', item.toMap());
+  }
 
   Future<List<ScanHistoryItem>> getAllHistory() async {
     final db = await _dbHelper.database;

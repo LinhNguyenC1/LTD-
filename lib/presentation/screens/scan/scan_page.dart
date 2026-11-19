@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../data/models/food.dart';
+import 'package:provider/provider.dart';
+import '../../../business_logic/viewmodels/scan_viewmodel.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/validators/barcode_validator.dart';
+import '../../../data/models/cached_product_adapter.dart';
+import '../../../data/models/food.dart';
 import 'lookup_error_page.dart';
 import 'lookup_not_found_page.dart';
 
@@ -19,7 +23,8 @@ class _ScanPageState extends State<ScanPage>
   ScanMode scanMode = ScanMode.barcode;
   bool flashOn = false;
   final TextEditingController barcodeController =
-      TextEditingController(text: '8930000000128');
+      TextEditingController(text: '8934567890123');
+  String? _barcodeError;
 
   late AnimationController _animController;
   late Animation<double> _animation;
@@ -42,6 +47,67 @@ class _ScanPageState extends State<ScanPage>
     _animController.dispose();
     barcodeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitBarcode(String rawBarcode) async {
+    final clean = rawBarcode.trim();
+    if (!BarcodeValidator.isValid(clean)) {
+      setState(() {
+        _barcodeError = 'Mã vạch không hợp lệ (cần 8, 12 hoặc 13 chữ số)';
+      });
+      return;
+    }
+
+    setState(() {
+      _barcodeError = null;
+    });
+
+    ScanViewModel? vm;
+    try {
+      vm = context.read<ScanViewModel>();
+    } catch (_) {
+      vm = null;
+    }
+    vm ??= ScanViewModel();
+
+    try {
+      final success = await vm.lookupBarcode(clean);
+      if (!mounted) return;
+
+      if (success && vm.scannedProduct != null) {
+        widget.onOpenFood(vm.scannedProduct!.toFood());
+      } else if (vm.isNotFound) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LookupNotFoundPage(barcode: clean),
+          ),
+        );
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LookupErrorPage(
+              barcode: clean,
+              errorMessage: vm?.errorMessage,
+              onRetry: () => _submitBarcode(clean),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LookupErrorPage(
+            barcode: clean,
+            errorMessage: 'Lỗi tra cứu: $e',
+            onRetry: () => _submitBarcode(clean),
+          ),
+        ),
+      );
+    }
   }
 
   void _showScanFailedPrompt() {
@@ -404,10 +470,11 @@ class _ScanPageState extends State<ScanPage>
           ),
 
           // Bottom Controls & Simulation Panel
-          Container(
-            padding: const EdgeInsets.all(20),
-            color: canvasBg,
-            child: Column(
+          if (!isManual)
+            Container(
+              padding: const EdgeInsets.all(20),
+              color: canvasBg,
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -448,16 +515,11 @@ class _ScanPageState extends State<ScanPage>
                   children: [
                     Expanded(
                       child: FilledButton.icon(
-                        onPressed: () {
-                          final searchedId = barcodeController.text.trim();
-                          final matchedFood = mockFoods.firstWhere(
-                            (f) => f.barcode == searchedId,
-                            orElse: () => mockFoods.first,
-                          );
-                          widget.onOpenFood(matchedFood);
-                        },
+                        key: const Key('scan_preview_sample_button'),
+                        onPressed: () =>
+                            _submitBarcode(barcodeController.text.trim()),
                         icon: const Icon(Icons.check_circle_outline, size: 18),
-                        label: const Text('Xem sản phẩm mẫu',
+                        label: const Text('Tra cứu mã vạch',
                             style: TextStyle(
                                 fontSize: 12, fontWeight: FontWeight.bold)),
                         style: FilledButton.styleFrom(
@@ -474,7 +536,11 @@ class _ScanPageState extends State<ScanPage>
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const LookupErrorPage(),
+                          builder: (_) => LookupErrorPage(
+                            barcode: barcodeController.text.trim(),
+                            onRetry: () =>
+                                _submitBarcode(barcodeController.text.trim()),
+                          ),
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
@@ -492,7 +558,9 @@ class _ScanPageState extends State<ScanPage>
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const LookupNotFoundPage(),
+                          builder: (_) => LookupNotFoundPage(
+                            barcode: barcodeController.text.trim(),
+                          ),
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
@@ -564,11 +632,9 @@ class _ScanPageState extends State<ScanPage>
   }
 
   Widget _buildManualInputView() {
-    return Container(
-      color: Colors.white,
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
@@ -598,13 +664,15 @@ class _ScanPageState extends State<ScanPage>
           ),
           const SizedBox(height: 24),
           TextField(
+            key: const Key('scan_barcode_input_field'),
             controller: barcodeController,
             keyboardType: TextInputType.number,
             style: const TextStyle(
                 fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 2),
             decoration: InputDecoration(
               labelText: 'Số mã vạch (EAN / UPC)',
-              hintText: 'Ví dụ: 8930000000128',
+              hintText: 'Ví dụ: 8934567890123',
+              errorText: _barcodeError,
               prefixIcon: const Icon(Icons.qr_code, color: primaryGreen),
               filled: true,
               fillColor: const Color(0xFFF4F6F3),
@@ -617,32 +685,101 @@ class _ScanPageState extends State<ScanPage>
                 borderSide: const BorderSide(color: primaryGreen, width: 2),
               ),
             ),
+            onSubmitted: (val) => _submitBarcode(val),
+            onChanged: (_) {
+              if (_barcodeError != null) {
+                setState(() => _barcodeError = null);
+              }
+            },
           ),
           const SizedBox(height: 16),
 
-          // Preset Sample Buttons
+          // Submit Button
+          FilledButton.icon(
+            key: const Key('scan_manual_submit_button'),
+            onPressed: () => _submitBarcode(barcodeController.text),
+            icon: const Icon(Icons.search, size: 20),
+            label: const Text(
+              'Tra cứu ngay',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: primaryGreen,
+              minimumSize: const Size.fromHeight(50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Preset Simulation Chips
           const Text('Hoặc chọn nhanh mã sản phẩm mẫu:',
-              style: TextStyle(fontSize: 12, color: subText)),
-          const SizedBox(height: 8),
+              style: TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w600, color: inkText)),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: [
               ActionChip(
-                label: const Text('Bánh cacao (8930000000128)',
-                    style: TextStyle(fontSize: 11)),
+                key: const Key('chip_simulation_coca'),
+                avatar: const Icon(Icons.local_drink, size: 16, color: primaryGreen),
+                label: const Text('Coca-Cola (5449000000996)',
+                    style: TextStyle(fontSize: 12)),
                 onPressed: () {
                   setState(() {
-                    barcodeController.text = '8930000000128';
+                    barcodeController.text = '5449000000996';
                   });
+                  _submitBarcode('5449000000996');
                 },
               ),
               ActionChip(
-                label: const Text('Bánh nguyên bản (8930000000129)',
-                    style: TextStyle(fontSize: 11)),
+                key: const Key('chip_simulation_nutella'),
+                avatar: const Icon(Icons.cookie_outlined, size: 16, color: primaryGreen),
+                label: const Text('Nutella (3017620422003)',
+                    style: TextStyle(fontSize: 12)),
                 onPressed: () {
                   setState(() {
-                    barcodeController.text = '8930000000129';
+                    barcodeController.text = '3017620422003';
                   });
+                  _submitBarcode('3017620422003');
+                },
+              ),
+              ActionChip(
+                key: const Key('chip_simulation_cacao'),
+                avatar: const Icon(Icons.bakery_dining_outlined, size: 16, color: primaryGreen),
+                label: const Text('Bánh cacao (8934567890123)',
+                    style: TextStyle(fontSize: 12)),
+                onPressed: () {
+                  setState(() {
+                    barcodeController.text = '8934567890123';
+                  });
+                  _submitBarcode('8934567890123');
+                },
+              ),
+              ActionChip(
+                key: const Key('chip_simulation_original'),
+                avatar: const Icon(Icons.grass, size: 16, color: primaryGreen),
+                label: const Text('Bánh nguyên bản (8934567890456)',
+                    style: TextStyle(fontSize: 12)),
+                onPressed: () {
+                  setState(() {
+                    barcodeController.text = '8934567890456';
+                  });
+                  _submitBarcode('8934567890456');
+                },
+              ),
+              ActionChip(
+                key: const Key('chip_simulation_404'),
+                avatar: const Icon(Icons.error_outline, size: 16, color: Colors.orange),
+                label: const Text('404 test (0000000000000)',
+                    style: TextStyle(fontSize: 12)),
+                onPressed: () {
+                  setState(() {
+                    barcodeController.text = '0000000000000';
+                  });
+                  _submitBarcode('0000000000000');
                 },
               ),
             ],

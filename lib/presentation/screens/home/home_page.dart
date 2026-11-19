@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../business_logic/viewmodels/auth_viewmodel.dart';
 import '../../../data/models/food.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/pack_widget.dart';
+import 'search_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({
@@ -21,6 +24,8 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final recentFood = mockFoods.first;
+    final authVm = Provider.of<AuthViewModel?>(context);
+    final displayName = authVm?.currentUser?.username ?? 'Linh';
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -49,6 +54,16 @@ class HomePage extends StatelessWidget {
             Row(
               children: [
                 IconButton(
+                  key: const Key('home_search_icon'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SearchPage()),
+                    );
+                  },
+                  icon: const Icon(Icons.search, color: primaryGreen),
+                ),
+                IconButton(
                   onPressed: () {},
                   icon: const Icon(Icons.eco_outlined, color: primaryGreen),
                 ),
@@ -61,11 +76,52 @@ class HomePage extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        const Text(
-          'Chào Linh, cùng đọc nhãn nhé! 👋',
-          style: TextStyle(fontSize: 15, color: subText),
+        Text(
+          'Chào $displayName, cùng đọc nhãn nhé! 👋',
+          style: const TextStyle(fontSize: 15, color: subText),
         ),
         const SizedBox(height: 14),
+
+        // Search Bar entry point
+        InkWell(
+          key: const Key('home_search_bar'),
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SearchPage()),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: cardBorder),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x05000000),
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.search, color: primaryGreen, size: 20),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Tìm kiếm sản phẩm, mã vạch, nhãn...',
+                    style: TextStyle(fontSize: 14, color: subText),
+                  ),
+                ),
+                Icon(Icons.tune, color: subText, size: 18),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
 
         // Banner 1: Single Scan
         Container(

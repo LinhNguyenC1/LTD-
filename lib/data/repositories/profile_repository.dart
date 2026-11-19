@@ -2,7 +2,10 @@ import '../local/daos/profile_dao.dart';
 import '../models/user_profile.dart';
 
 class ProfileRepository {
-  final ProfileDao _profileDao = ProfileDao();
+  final ProfileDao _profileDao;
+
+  ProfileRepository({ProfileDao? profileDao})
+      : _profileDao = profileDao ?? ProfileDao();
 
   Future<UserProfile?> fetchUserProfile() async {
     return await _profileDao.getProfile();

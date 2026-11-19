@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -7,6 +8,19 @@ class DatabaseHelper {
   static Database? _database;
 
   DatabaseHelper._init();
+
+  @visibleForTesting
+  static void setTestDatabase(Database? db) {
+    _database = db;
+  }
+
+  @visibleForTesting
+  static Future<void> reset() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+  }
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -20,11 +34,15 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onConfigure: _onConfigure,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onConfigure(Database db) async {
+    await db.execute('PRAGMA foreign_keys = ON');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -33,16 +51,23 @@ class DatabaseHelper {
     await db.execute('DROP TABLE IF EXISTS cached_product');
     await db.execute('DROP TABLE IF EXISTS user_allergen');
     await db.execute('DROP TABLE IF EXISTS user_profile');
+    await db.execute('DROP TABLE IF EXISTS users');
     await _createDB(db, newVersion);
-  }
-
-  Future<void> _onConfigure(Database db) async {
-    await db.execute('PRAGMA foreign_keys = ON');
   }
 
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE user_profile (
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS user_profile (
         id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
         nutrition_targets TEXT,
@@ -51,7 +76,7 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
-      CREATE TABLE user_allergen (
+      CREATE TABLE IF NOT EXISTS user_allergen (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         profile_id INTEGER NOT NULL,
         allergen_code TEXT NOT NULL,
@@ -60,7 +85,7 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
-      CREATE TABLE cached_product (
+      CREATE TABLE IF NOT EXISTS cached_product (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         barcode TEXT,
         product_name TEXT NOT NULL,
@@ -76,16 +101,16 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
-      CREATE TABLE product_nutrition (
+      CREATE TABLE IF NOT EXISTS product_nutrition (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        product_id INTEGER NOT NULL,
+        product_id INTEGER NOT NULL UNIQUE,
         nutrition_data TEXT NOT NULL,
         FOREIGN KEY (product_id) REFERENCES cached_product (id) ON DELETE CASCADE
       )
     ''');
 
     await db.execute('''
-      CREATE TABLE scan_history (
+      CREATE TABLE IF NOT EXISTS scan_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         product_id INTEGER NOT NULL,
         evaluation_status TEXT NOT NULL,
@@ -94,6 +119,16 @@ class DatabaseHelper {
         FOREIGN KEY (product_id) REFERENCES cached_product (id) ON DELETE CASCADE
       )
     ''');
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_product_barcode ON cached_product(barcode)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_history_product ON scan_history(product_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_history_scanned_at ON scan_history(scanned_at DESC)',
+    );
 
     await _seedSampleData(db);
   }
