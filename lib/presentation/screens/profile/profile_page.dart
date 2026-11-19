@@ -4,6 +4,7 @@ import '../../../business_logic/viewmodels/auth_viewmodel.dart';
 import '../../../business_logic/viewmodels/profile_viewmodel.dart';
 import '../../../core/validators/form_validator.dart';
 import '../auth/login_page.dart';
+import 'ai_analysis_page.dart';
 
 class ProfilePage extends StatefulWidget {
 	const ProfilePage({super.key});
@@ -880,58 +881,219 @@ class _ProfilePageState extends State<ProfilePage> {
 		);
 	}
 
-	Widget _buildAiBannerCard() {
-		return Container(
-			padding: const EdgeInsets.all(16),
-			decoration: BoxDecoration(
-				color: _softGreenBg,
-				borderRadius: BorderRadius.circular(16),
-				border: Border.all(color: _primaryGreen.withValues(alpha: 0.25)),
-			),
-			child: Row(
-				children: [
-					Container(
-						padding: const EdgeInsets.all(10),
-						decoration: BoxDecoration(
-							color: _primaryGreen,
-							borderRadius: BorderRadius.circular(12),
-						),
-						child: const Icon(
-							Icons.auto_awesome_rounded,
-							color: Colors.white,
-							size: 22,
-						),
+	void _openAiSetupDialog() async {
+		final noteController = TextEditingController(
+			text: 'Tôi dị ứng sữa và đậu phộng, muốn giảm đường và muối',
+		);
+
+		final shouldProceed = await showModalBottomSheet<bool>(
+			context: context,
+			isScrollControlled: true,
+			backgroundColor: Colors.transparent,
+			builder: (ctx) {
+				return Padding(
+					padding: EdgeInsets.only(
+						bottom: MediaQuery.of(ctx).viewInsets.bottom,
 					),
-					const SizedBox(width: 14),
-					const Expanded(
+					child: Container(
+						padding: const EdgeInsets.all(20),
+						decoration: const BoxDecoration(
+							color: Colors.white,
+							borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+						),
 						child: Column(
+							mainAxisSize: MainAxisSize.min,
 							crossAxisAlignment: CrossAxisAlignment.start,
 							children: [
-								Text(
-									'Thiết lập nhanh bằng AI',
-									style: TextStyle(
-										color: _inkText,
-										fontSize: 16,
-										fontWeight: FontWeight.bold,
+								Row(
+									children: [
+										Container(
+											padding: const EdgeInsets.all(8),
+											decoration: BoxDecoration(
+												color: _softGreenBg,
+												borderRadius: BorderRadius.circular(10),
+											),
+											child: const Icon(Icons.auto_awesome_rounded, color: _primaryGreen, size: 22),
+										),
+										const SizedBox(width: 12),
+										const Expanded(
+											child: Text(
+												'Thiết lập nhanh bằng AI',
+												style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _inkText),
+											),
+										),
+										IconButton(
+											icon: const Icon(Icons.close),
+											onPressed: () => Navigator.pop(ctx, false),
+										),
+									],
+								),
+								const SizedBox(height: 12),
+								const Text(
+									'Nhập mô tả thói quen, bệnh lý hoặc sở thích ăn uống của bạn để AI tự động phân tích và gợi ý tiêu chí dinh dưỡng:',
+									style: TextStyle(fontSize: 13, color: _subText, height: 1.4),
+								),
+								const SizedBox(height: 12),
+								TextField(
+									controller: noteController,
+									maxLines: 3,
+									decoration: InputDecoration(
+										hintText: 'Ví dụ: Tôi dị ứng sữa và đậu phộng, muốn giảm đường và muối...',
+										filled: true,
+										fillColor: _warmBg,
+										border: OutlineInputBorder(
+											borderRadius: BorderRadius.circular(12),
+											borderSide: const BorderSide(color: Colors.black12),
+										),
 									),
 								),
-								SizedBox(height: 3),
-								Text(
-									'Nhập mô tả thói quen ăn uống để tự động gợi ý tiêu chí dinh dưỡng',
-									style: TextStyle(
-										color: _subText,
-										fontSize: 13,
+								const SizedBox(height: 16),
+								FilledButton.icon(
+									onPressed: () => Navigator.pop(ctx, true),
+									icon: const Icon(Icons.auto_awesome_rounded),
+									label: const Text('Phân tích bằng AI', style: TextStyle(fontWeight: FontWeight.bold)),
+									style: FilledButton.styleFrom(
+										backgroundColor: _primaryGreen,
+										minimumSize: const Size.fromHeight(48),
+										shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 									),
 								),
 							],
 						),
 					),
-					const SizedBox(width: 8),
-					const Icon(
-						Icons.chevron_right_rounded,
-						color: _primaryGreen,
+				);
+			},
+		);
+
+		if(shouldProceed == true && mounted) {
+			final result = await Navigator.push<dynamic>(
+				context,
+				MaterialPageRoute(
+					builder: (_) => AiAnalysisPage(
+						noteText: noteController.text,
+						profileName: _nameController.text.trim().isNotEmpty
+							? _nameController.text.trim()
+							: 'bạn',
 					),
-				],
+				),
+			);
+
+			if(result != null && mounted) {
+				int count = 0;
+				setState(() {
+					if(result is Map) {
+						if(result['allergens'] is List) {
+							final list = result['allergens'] as List;
+							for(final a in list) {
+								final code = a.toString();
+								_selectedAllergens.add(code);
+								if(!_allergyLabels.containsKey(code)) {
+									final found = _allAllergenSuggestions.firstWhere(
+										(s) => s['key'] == code,
+										orElse: () => {'key': code, 'name': code},
+									);
+									_allergyLabels[code] = found['name']!;
+								}
+								count++;
+							}
+						}
+						if(result['nutrition'] is Map) {
+							final map = result['nutrition'] as Map;
+							map.forEach((k, v) {
+								final key = k.toString();
+								final val = (v as num).toDouble();
+								_selectedNutrition.add(key);
+								if(!_nutritionLabels.containsKey(key)) {
+									final found = _allNutritionSuggestions.firstWhere(
+										(s) => s['key'] == key,
+										orElse: () => {'key': key, 'name': key},
+									);
+									_nutritionLabels[key] = found['name']!;
+								}
+								_nutritionControllers.putIfAbsent(key, () => TextEditingController()).text =
+										val.toString();
+								count++;
+							});
+						}
+						if(count == 0 && result['count'] is int) {
+							count = result['count'] as int;
+						}
+					} else if(result is int) {
+						count = result;
+						_selectedAllergens.add('milk');
+						_selectedAllergens.add('peanut');
+						_selectedNutrition.add('sugars');
+						_nutritionControllers.putIfAbsent('sugars', () => TextEditingController()).text = '10';
+						_selectedNutrition.add('sodium');
+						_nutritionControllers.putIfAbsent('sodium', () => TextEditingController()).text = '0.3';
+					}
+				});
+				ScaffoldMessenger.of(context).showSnackBar(
+					SnackBar(
+						content: Text('Đã áp dụng thành công $count tiêu chí từ AI vào hồ sơ!'),
+						backgroundColor: _primaryGreen,
+					),
+				);
+			}
+		}
+	}
+
+	Widget _buildAiBannerCard() {
+		return InkWell(
+			onTap: _openAiSetupDialog,
+			borderRadius: BorderRadius.circular(16),
+			child: Container(
+				padding: const EdgeInsets.all(16),
+				decoration: BoxDecoration(
+					color: _softGreenBg,
+					borderRadius: BorderRadius.circular(16),
+					border: Border.all(color: _primaryGreen.withValues(alpha: 0.25)),
+				),
+				child: Row(
+					children: [
+						Container(
+							padding: const EdgeInsets.all(10),
+							decoration: BoxDecoration(
+								color: _primaryGreen,
+								borderRadius: BorderRadius.circular(12),
+							),
+							child: const Icon(
+								Icons.auto_awesome_rounded,
+								color: Colors.white,
+								size: 22,
+							),
+						),
+						const SizedBox(width: 14),
+						const Expanded(
+							child: Column(
+								crossAxisAlignment: CrossAxisAlignment.start,
+								children: [
+									Text(
+										'Thiết lập nhanh bằng AI',
+										style: TextStyle(
+											color: _inkText,
+											fontSize: 16,
+											fontWeight: FontWeight.bold,
+										),
+									),
+									SizedBox(height: 3),
+									Text(
+										'Nhập mô tả thói quen ăn uống để tự động gợi ý tiêu chí dinh dưỡng',
+										style: TextStyle(
+											color: _subText,
+											fontSize: 13,
+										),
+									),
+								],
+							),
+						),
+						const SizedBox(width: 8),
+						const Icon(
+							Icons.chevron_right_rounded,
+							color: _primaryGreen,
+						),
+					],
+				),
 			),
 		);
 	}

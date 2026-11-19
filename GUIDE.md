@@ -114,3 +114,13 @@ git commit -m "Mô tả thay đổi của bạn"
 # 3. Push lên branch main trên GitHub
 git push origin main
 ```
+
+---
+
+## 💡 8. Xử Lý Sự Cố Thường Gặp (Troubleshooting)
+
+- **Máy ảo Android bị đen màn hình**: 
+  - Trong Android Studio, vào `Settings` (Ctrl + Alt + S) ➔ `Tools` ➔ `Emulator` ➔ đổi dòng **OpenGL ES renderer** sang **ANGLE (D3D11)**.
+  - Hoặc trong **Virtual Device Manager**, bấm chỉnh sửa AVD ➔ `Show Advanced Settings` ➔ đổi **Graphics** sang **Software - GLES 2.0**, sau đó chọn **Cold Boot Now** để khởi động lại máy ảo.
+- **Yêu cầu Android SDK**:
+  - Đảm bảo trong Android Studio ➔ `Settings` ➔ `Languages & Frameworks` ➔ `Android SDK` đã cài đặt SDK Platform tương ứng. Mã nguồn đã được cấu hình sẵn chế độ TextureView và bỏ qua cảnh báo AGP để tương thích mượt mà trên mọi máy tính.
