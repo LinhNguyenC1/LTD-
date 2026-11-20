@@ -39,7 +39,7 @@ class MockHistoryDaoForScanPage extends HistoryDao {
 
 class MockProfileRepoForScanPage extends ProfileRepository {
   @override
-  Future<UserProfile?> fetchUserProfile() async => null;
+  Future<UserProfile?> fetchUserProfile([int? userId]) async => null;
 }
 
 void main() {

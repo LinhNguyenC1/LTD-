@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:an_lanh/presentation/screens/profile/ai_analysis_page.dart';
+import 'package:an_lanh/core/services/ai_service.dart';
 
 void main() {
+	setUp(() {
+		AiService.userApiKey = '';
+	});
+
+	tearDown(() {
+		AiService.userApiKey = 'AIzaSyC1sae0YW8_ol3EFCH-J_krwISZxS28DVA';
+	});
+
 	group('AiAnalysisPage Widget Tests', () {
 		testWidgets('renders extracted allergen criterion accurately', (tester) async {
 			tester.view.physicalSize = const Size(800, 1600);
@@ -22,7 +31,7 @@ void main() {
 			);
 			await tester.pumpAndSettle();
 
-			expect(find.text('Bạn chọn, AI gợi ý'), findsOneWidget);
+			expect(find.text('Gợi ý tiêu chí từ ghi chú'), findsOneWidget);
 			expect(find.text('Hồ sơ của Minh · Chờ xác nhận áp dụng'), findsOneWidget);
 			expect(find.text('Dị ứng đậu phộng'), findsOneWidget);
 			expect(find.text('Dị ứng sữa'), findsNothing);

@@ -441,7 +441,7 @@ void main() {
 
   group('ProfilePage - Deletion and Account Actions', () {
     testWidgets('deletes profile when confirmation dialog is accepted', (tester) async {
-      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.physicalSize = const Size(800, 2200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
         tester.view.resetPhysicalSize();
@@ -477,7 +477,7 @@ void main() {
     });
 
     testWidgets('canceling deletion dialog does not call clearUserProfile', (tester) async {
-      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.physicalSize = const Size(800, 2200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
         tester.view.resetPhysicalSize();

@@ -32,13 +32,13 @@ class ProfileDao {
     });
   }
 
-  Future<UserProfile?> getProfile() async {
+  Future<UserProfile?> getProfile([int id = 1]) async {
     final db = await _dbHelper.database;
 
     final profileMaps = await db.query(
       'user_profile',
       where: 'id = ?',
-      whereArgs: [1],
+      whereArgs: [id],
       limit: 1,
     );
 
@@ -47,7 +47,7 @@ class ProfileDao {
     final allergenMaps = await db.query(
       'user_allergen',
       where: 'profile_id = ?',
-      whereArgs: [1],
+      whereArgs: [id],
     );
 
     final allergenCodes =
@@ -56,12 +56,12 @@ class ProfileDao {
     return UserProfile.fromMap(profileMaps.first, allergens: allergenCodes);
   }
 
-  Future<int> deleteProfile() async {
+  Future<int> deleteProfile([int id = 1]) async {
     final db = await _dbHelper.database;
     return await db.delete(
       'user_profile',
       where: 'id = ?',
-      whereArgs: [1],
+      whereArgs: [id],
     );
   }
 }

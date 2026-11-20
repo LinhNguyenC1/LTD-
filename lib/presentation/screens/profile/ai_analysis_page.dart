@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../business_logic/rules/ai_note_parser.dart';
+import '../../../core/services/ai_service.dart';
 import '../../../core/theme/app_theme.dart';
 
 class AiAnalysisPage extends StatefulWidget {
@@ -18,11 +19,88 @@ class AiAnalysisPage extends StatefulWidget {
 
 class _AiAnalysisPageState extends State<AiAnalysisPage> {
 	late List<ExtractedCriterion> _criteria;
+	bool _isFromCloud = false;
+	String _providerName = 'Phân tích tự động (Offline)';
+	bool _isAnalyzing = false;
 
 	@override
 	void initState() {
 		super.initState();
 		_criteria = AiNoteParser.parse(widget.noteText);
+		if (AiService.activeApiKey.isNotEmpty) {
+			_runCloudAnalysis();
+		}
+	}
+
+	Future<void> _runCloudAnalysis() async {
+		setState(() => _isAnalyzing = true);
+		try {
+			final res = await AiService.analyzeNote(widget.noteText);
+			if (mounted && res.criteria.isNotEmpty) {
+				setState(() {
+					_criteria = res.criteria;
+					_isFromCloud = res.isFromCloudAi;
+					_providerName = res.providerName;
+				});
+			}
+		} finally {
+			if (mounted) {
+				setState(() => _isAnalyzing = false);
+			}
+		}
+	}
+
+	void _openApiKeyDialog() async {
+		final controller = TextEditingController(text: AiService.activeApiKey);
+		final saved = await showDialog<bool>(
+			context: context,
+			builder: (ctx) => AlertDialog(
+				title: const Row(
+					children: [
+						Icon(Icons.auto_awesome, color: primaryGreen, size: 22),
+						SizedBox(width: 8),
+						Text('Gemini AI Key', style: TextStyle(fontSize: 16)),
+					],
+				),
+				content: Column(
+					mainAxisSize: MainAxisSize.min,
+					crossAxisAlignment: CrossAxisAlignment.start,
+					children: [
+						const Text(
+							'Nhập Google Gemini API Key miễn phí (từ aistudio.google.com) để phân tích ngôn ngữ bằng AI đám mây:',
+							style: TextStyle(fontSize: 13, color: subText),
+						),
+						const SizedBox(height: 12),
+						TextField(
+							controller: controller,
+							decoration: const InputDecoration(
+								hintText: 'AIzaSy...',
+								border: OutlineInputBorder(),
+								contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+							),
+						),
+					],
+				),
+				actions: [
+					TextButton(
+						onPressed: () => Navigator.pop(ctx, false),
+						child: const Text('Đóng'),
+					),
+					ElevatedButton(
+						style: ElevatedButton.styleFrom(backgroundColor: primaryGreen),
+						onPressed: () {
+							AiService.userApiKey = controller.text.trim();
+							Navigator.pop(ctx, true);
+						},
+						child: const Text('Lưu & Phân tích', style: TextStyle(color: Colors.white)),
+					),
+				],
+			),
+		);
+
+		if (saved == true && mounted) {
+			await _runCloudAnalysis();
+		}
 	}
 
 	@override
@@ -37,10 +115,10 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
 					crossAxisAlignment: CrossAxisAlignment.start,
 					children: [
 						const Text(
-							'Bạn chọn, AI gợi ý',
+							'Gợi ý tiêu chí từ ghi chú',
 							style: TextStyle(
 								fontWeight: FontWeight.bold,
-								fontSize: 18,
+								fontSize: 17,
 								color: inkText,
 							),
 						),
@@ -50,30 +128,51 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
 						),
 					],
 				),
+				actions: [
+					IconButton(
+						icon: Icon(
+							_isFromCloud ? Icons.auto_awesome : Icons.key_outlined,
+							color: _isFromCloud ? primaryGreen : subText,
+						),
+						tooltip: 'Cấu hình Gemini API Key',
+						onPressed: _openApiKeyDialog,
+					),
+				],
 				backgroundColor: canvasBg,
 				elevation: 0,
 			),
 			body: ListView(
 				padding: const EdgeInsets.all(20),
 				children: [
-					// Badge
+					// Source Badge
 					Row(
 						children: [
 							Container(
 								padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
 								decoration: BoxDecoration(
-									color: const Color(0xFFE4F1E5),
+									color: _isFromCloud ? const Color(0xFFE4F1E5) : const Color(0xFFF0F4F1),
 									borderRadius: BorderRadius.circular(16),
 								),
-								child: const Row(
+								child: Row(
 									mainAxisSize: MainAxisSize.min,
 									children: [
-										Icon(Icons.check_circle_outline, size: 14, color: primaryGreen),
-										SizedBox(width: 4),
+										if (_isAnalyzing)
+											const SizedBox(
+												width: 12,
+												height: 12,
+												child: CircularProgressIndicator(strokeWidth: 2, color: primaryGreen),
+											)
+										else
+											Icon(
+												_isFromCloud ? Icons.auto_awesome : Icons.bolt_rounded,
+												size: 14,
+												color: _isFromCloud ? primaryGreen : subText,
+											),
+										const SizedBox(width: 5),
 										Text(
-											'Đã nhận gợi ý',
+											_isAnalyzing ? 'Đang phân tích qua AI...' : _providerName,
 											style: TextStyle(
-												color: primaryGreen,
+												color: _isFromCloud ? primaryGreen : inkText,
 												fontSize: 12,
 												fontWeight: FontWeight.bold,
 											),
@@ -85,7 +184,7 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
 					),
 					const SizedBox(height: 12),
 					const Text(
-						'Xem lại những điều AI hiểu từ ghi chú. Chỉ áp dụng các mục bạn đồng ý; hồ sơ chưa thay đổi.',
+						'Xem lại những điều hệ thống phân tích từ ghi chú. Chỉ áp dụng các mục bạn đồng ý; hồ sơ chưa thay đổi.',
 						style: TextStyle(fontSize: 13, color: inkText, height: 1.4),
 					),
 					const SizedBox(height: 16),
@@ -133,34 +232,36 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
 					),
 					const SizedBox(height: 14),
 
-					// Permission Banner Box
+					// Privacy / Source Notice Box
 					Container(
 						padding: const EdgeInsets.all(14),
 						decoration: BoxDecoration(
 							color: const Color(0xFFE8F2E7),
 							borderRadius: BorderRadius.circular(16),
 						),
-						child: const Row(
+						child: Row(
 							crossAxisAlignment: CrossAxisAlignment.start,
 							children: [
-								Icon(Icons.check_circle_outline, color: primaryGreen, size: 20),
-								SizedBox(width: 10),
+								const Icon(Icons.security_outlined, color: primaryGreen, size: 20),
+								const SizedBox(width: 10),
 								Expanded(
 									child: Column(
 										crossAxisAlignment: CrossAxisAlignment.start,
 										children: [
-											Text(
-												'Đã cho phép xử lý ghi chú lần này',
+											const Text(
+												'Phân tích thông minh & Tôn trọng quyền riêng tư',
 												style: TextStyle(
 													fontWeight: FontWeight.bold,
 													fontSize: 13,
 													color: primaryGreen,
 												),
 											),
-											SizedBox(height: 4),
+											const SizedBox(height: 4),
 											Text(
-												'Ghi chú đã được gửi cho dịch vụ AI sau khi bạn đồng ý. Quyền này chỉ dành cho lần gửi vừa rồi, không phải đồng ý cho mọi lần sau.\n\nMặc định không chia sẻ. Mỗi lần gửi mới đều cần bạn cho phép trước.',
-												style: TextStyle(fontSize: 11, color: inkText, height: 1.35),
+												_isFromCloud
+													? 'Ghi chú được phân tích qua Google Gemini AI an toàn. Không lưu trữ thông tin cá nhân trên đám mây.'
+													: 'Ghi chú được phân tích hoàn toàn cục bộ trên thiết bị của bạn. Không gửi bất kỳ dữ liệu nào ra mạng ngoài.',
+												style: const TextStyle(fontSize: 11, color: inkText, height: 1.35),
 											),
 										],
 									),
@@ -259,7 +360,7 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
 												),
 												SizedBox(height: 2),
 												Text(
-													'AI đề xuất các chỉ số dinh dưỡng dựa trên ghi chú của bạn. AI không tự ý đặt mức mới nếu không phù hợp và đây không phải là chỉ định y khoa.',
+													'Hệ thống đề xuất các chỉ số dinh dưỡng dựa trên ghi chú của bạn. Đây là tiêu chuẩn cá nhân hóa, không phải chỉ định y khoa.',
 													style: TextStyle(
 														fontSize: 11,
 														color: Color(0xFF2C4359),
@@ -339,15 +440,10 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
 							)) {
 								nutritionMap[c.nutritionKey!] = c.targetValue ?? 0.0;
 							}
-							final selectedDiets = selectedItems
-									.where((c) => c.type == 'diet')
-									.map((c) => c.id)
-									.toList();
 
 							Navigator.pop(context, {
 								'allergens': selectedAllergens,
 								'nutrition': nutritionMap,
-								'diets': selectedDiets,
 								'count': selectedItems.length,
 								// Legacy backward compatibility flags
 								'milk': selectedAllergens.contains('milk'),

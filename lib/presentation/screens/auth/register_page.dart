@@ -146,8 +146,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   key: const Key('register_name_field'),
                   controller: _nameController,
                   decoration: InputDecoration(
-                    labelText: 'Họ tên hoặc tên tài khoản',
-                    hintText: 'VD: Nguyễn Văn A',
+                    labelText: 'Tên tài khoản',
+                    hintText: 'VD: nguyenvana',
                     prefixIcon: const Icon(Icons.person_outline, color: primaryGreen),
                     filled: true,
                     fillColor: Colors.white,

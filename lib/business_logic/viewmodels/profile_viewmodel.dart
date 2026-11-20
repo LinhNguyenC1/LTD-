@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
+import '../../data/models/user.dart';
 import '../../data/models/user_profile.dart';
 import '../../data/repositories/profile_repository.dart';
 
 class ProfileViewModel extends ChangeNotifier {
   final ProfileRepository _repository;
+  int? _activeUserId;
 
   ProfileViewModel({ProfileRepository? profileRepository})
       : _repository = profileRepository ?? ProfileRepository();
@@ -16,14 +18,24 @@ class ProfileViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get hasProfile => _profile != null;
+  int? get activeUserId => _activeUserId;
+  bool get isSynced => _activeUserId != null;
 
-  Future<void> loadProfile() async {
+  Future<void> loadProfile({int? userId}) async {
+    if (userId != null) {
+      _activeUserId = userId;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      _profile = await _repository.fetchUserProfile();
+      if (_activeUserId != null) {
+        _profile = await _repository.fetchUserProfile(_activeUserId);
+      } else {
+        _profile = await _repository.fetchUserProfile();
+      }
     } catch (e) {
       _errorMessage = 'Lỗi khi tải hồ sơ: $e';
     } finally {
@@ -32,22 +44,79 @@ class ProfileViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> saveProfile({
-    required String name,
-    required List<String> allergens,
-    required Map<String, double> nutritionTargets,
-  }) async {
+  Future<void> syncOnLogin(User user) async {
+    final uid = user.id;
+    if (uid == null) return;
+    _activeUserId = uid;
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      await _repository.saveUserProfile(
-        name: name,
-        allergens: allergens,
-        nutritionTargets: nutritionTargets,
-      );
-      _profile = await _repository.fetchUserProfile();
+      final existingAccountProfile = await _repository.fetchUserProfile(uid);
+      if (existingAccountProfile != null) {
+        _profile = existingAccountProfile;
+      } else {
+        final localProfile = await _repository.fetchUserProfile();
+        final profileToSave = UserProfile(
+          id: uid,
+          name: (localProfile != null && localProfile.name.trim().isNotEmpty)
+              ? localProfile.name
+              : user.username,
+          allergens: localProfile?.allergens ?? [],
+          nutritionTargets: localProfile?.nutritionTargets ?? {},
+          updatedAt: DateTime.now().toIso8601String(),
+        );
+        await _repository.saveUserProfile(
+          userId: uid,
+          name: profileToSave.name,
+          allergens: profileToSave.allergens,
+          nutritionTargets: profileToSave.nutritionTargets,
+        );
+        _profile = profileToSave;
+      }
+    } catch (e) {
+      _errorMessage = 'Lỗi khi đồng bộ hồ sơ vào tài khoản: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> onLogout() async {
+    _activeUserId = null;
+    await loadProfile();
+  }
+
+  Future<bool> saveProfile({
+    int? userId,
+    required String name,
+    required List<String> allergens,
+    required Map<String, double> nutritionTargets,
+  }) async {
+    final targetId = userId ?? _activeUserId;
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (targetId != null) {
+        await _repository.saveUserProfile(
+          userId: targetId,
+          name: name,
+          allergens: allergens,
+          nutritionTargets: nutritionTargets,
+        );
+        _profile = await _repository.fetchUserProfile(targetId);
+      } else {
+        await _repository.saveUserProfile(
+          name: name,
+          allergens: allergens,
+          nutritionTargets: nutritionTargets,
+        );
+        _profile = await _repository.fetchUserProfile();
+      }
       return true;
     } catch (e) {
       _errorMessage = 'Không thể lưu hồ sơ: $e';
@@ -58,13 +127,18 @@ class ProfileViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> deleteProfile() async {
+  Future<bool> deleteProfile({int? userId}) async {
+    final targetId = userId ?? _activeUserId;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      await _repository.clearUserProfile();
+      if (targetId != null) {
+        await _repository.clearUserProfile(targetId);
+      } else {
+        await _repository.clearUserProfile();
+      }
       _profile = null;
       return true;
     } catch (e) {

@@ -89,15 +89,50 @@ class _ProfilePageState extends State<ProfilePage> {
 	};
 	final Set<String> _selectedNutrition = {'sugars', 'sodium', 'total_fat', 'protein_min'};
 	bool _isAddingNutrition = false;
+	int? _syncedUid;
+	bool _lastAuthStatus = false;
 
 	@override
 	void initState() {
 		super.initState();
 		WidgetsBinding.instance.addPostFrameCallback((_) async {
-			final vm = context.read<ProfileViewModel>();
-			await vm.loadProfile();
-			_populateFormFromViewModel(vm);
+			final authVm = context.read<AuthViewModel?>();
+			final profileVm = context.read<ProfileViewModel>();
+			if (authVm?.isAuthenticated == true && authVm?.currentUser?.id != null) {
+				_syncedUid = authVm!.currentUser!.id;
+				_lastAuthStatus = true;
+				await profileVm.syncOnLogin(authVm.currentUser!);
+			} else {
+				await profileVm.loadProfile();
+			}
+			if (mounted) _populateFormFromViewModel(profileVm);
 		});
+	}
+
+	@override
+	void didChangeDependencies() {
+		super.didChangeDependencies();
+		final authVm = Provider.of<AuthViewModel?>(context);
+		final isAuth = authVm?.isAuthenticated ?? false;
+		final currentUid = authVm?.currentUser?.id;
+
+		if (isAuth && currentUid != null && currentUid != _syncedUid) {
+			_syncedUid = currentUid;
+			_lastAuthStatus = true;
+			WidgetsBinding.instance.addPostFrameCallback((_) async {
+				final profileVm = context.read<ProfileViewModel>();
+				await profileVm.syncOnLogin(authVm!.currentUser!);
+				if (mounted) _populateFormFromViewModel(profileVm);
+			});
+		} else if (!isAuth && _lastAuthStatus) {
+			_syncedUid = null;
+			_lastAuthStatus = false;
+			WidgetsBinding.instance.addPostFrameCallback((_) async {
+				final profileVm = context.read<ProfileViewModel>();
+				await profileVm.onLogout();
+				if (mounted) _populateFormFromViewModel(profileVm);
+			});
+		}
 	}
 
 	void _populateFormFromViewModel(ProfileViewModel vm) {
@@ -918,7 +953,7 @@ class _ProfilePageState extends State<ProfilePage> {
 										const SizedBox(width: 12),
 										const Expanded(
 											child: Text(
-												'Thiết lập nhanh bằng AI',
+												'Gợi ý tiêu chí từ ghi chú',
 												style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _inkText),
 											),
 										),
@@ -930,7 +965,7 @@ class _ProfilePageState extends State<ProfilePage> {
 								),
 								const SizedBox(height: 12),
 								const Text(
-									'Nhập mô tả thói quen, bệnh lý hoặc sở thích ăn uống của bạn để AI tự động phân tích và gợi ý tiêu chí dinh dưỡng:',
+									'Nhập mô tả thói quen, bệnh lý hoặc sở thích ăn uống của bạn để tự động phân tích và gợi ý tiêu chí dinh dưỡng:',
 									style: TextStyle(fontSize: 13, color: _subText, height: 1.4),
 								),
 								const SizedBox(height: 12),
@@ -951,7 +986,7 @@ class _ProfilePageState extends State<ProfilePage> {
 								FilledButton.icon(
 									onPressed: () => Navigator.pop(ctx, true),
 									icon: const Icon(Icons.auto_awesome_rounded),
-									label: const Text('Phân tích bằng AI', style: TextStyle(fontWeight: FontWeight.bold)),
+									label: const Text('Phân tích ghi chú', style: TextStyle(fontWeight: FontWeight.bold)),
 									style: FilledButton.styleFrom(
 										backgroundColor: _primaryGreen,
 										minimumSize: const Size.fromHeight(48),
@@ -1030,7 +1065,7 @@ class _ProfilePageState extends State<ProfilePage> {
 				});
 				ScaffoldMessenger.of(context).showSnackBar(
 					SnackBar(
-						content: Text('Đã áp dụng thành công $count tiêu chí từ AI vào hồ sơ!'),
+						content: Text('Đã áp dụng thành công $count tiêu chí từ ghi chú vào hồ sơ!'),
 						backgroundColor: _primaryGreen,
 					),
 				);
@@ -1069,7 +1104,7 @@ class _ProfilePageState extends State<ProfilePage> {
 								crossAxisAlignment: CrossAxisAlignment.start,
 								children: [
 									Text(
-										'Thiết lập nhanh bằng AI',
+										'Gợi ý tiêu chí từ ghi chú',
 										style: TextStyle(
 											color: _inkText,
 											fontSize: 16,
@@ -1123,13 +1158,33 @@ class _ProfilePageState extends State<ProfilePage> {
 							child: Column(
 								crossAxisAlignment: CrossAxisAlignment.start,
 								children: [
-									Text(
-										user?.username ?? '',
-										style: const TextStyle(
-											fontSize: 16,
-											fontWeight: FontWeight.bold,
-											color: _inkText,
-										),
+									Row(
+										children: [
+											Text(
+												user?.username ?? '',
+												style: const TextStyle(
+													fontSize: 16,
+													fontWeight: FontWeight.bold,
+													color: _inkText,
+												),
+											),
+											const SizedBox(width: 8),
+											Container(
+												padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+												decoration: BoxDecoration(
+													color: _softGreenBg,
+													borderRadius: BorderRadius.circular(6),
+												),
+												child: const Row(
+													mainAxisSize: MainAxisSize.min,
+													children: [
+														Icon(Icons.check_circle, size: 11, color: _primaryGreen),
+														SizedBox(width: 3),
+														Text('Đã đồng bộ', style: TextStyle(color: _primaryGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+													],
+												),
+											),
+										],
 									),
 									const SizedBox(height: 2),
 									Text(
@@ -1154,6 +1209,11 @@ class _ProfilePageState extends State<ProfilePage> {
 							),
 							onPressed: () async {
 								await authVm?.logout();
+								if (context.mounted) {
+									final profileVm = context.read<ProfileViewModel>();
+									await profileVm.onLogout();
+									_populateFormFromViewModel(profileVm);
+								}
 							},
 							child: const Text('Đăng xuất'),
 						),
@@ -1172,7 +1232,7 @@ class _ProfilePageState extends State<ProfilePage> {
 								crossAxisAlignment: CrossAxisAlignment.start,
 								children: [
 									Text(
-										'Chưa đăng nhập',
+										'Chưa đăng nhập (Hồ sơ cục bộ)',
 										style: TextStyle(
 											fontSize: 15,
 											fontWeight: FontWeight.bold,
@@ -1181,7 +1241,7 @@ class _ProfilePageState extends State<ProfilePage> {
 									),
 									SizedBox(height: 2),
 									Text(
-										'Đăng nhập để đồng bộ tài khoản',
+										'Chỉnh sửa trên máy này · Đăng nhập để đồng bộ tài khoản',
 										style: TextStyle(
 											fontSize: 12,
 											color: _subText,
