@@ -18,7 +18,7 @@ Future<Database> createInMemoryTestDatabase({bool seedData = true}) async {
   setupTestDatabaseFactory();
   final db = await openDatabase(
     inMemoryDatabasePath,
-    version: 3,
+    version: 4,
     onConfigure: (db) async {
       await db.execute('PRAGMA foreign_keys = ON');
     },
@@ -35,10 +35,13 @@ Future<Database> createInMemoryTestDatabase({bool seedData = true}) async {
 
       await db.execute('''
         CREATE TABLE IF NOT EXISTS user_profile (
-          id INTEGER PRIMARY KEY,
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER UNIQUE,
+          is_guest INTEGER NOT NULL DEFAULT 0,
           name TEXT NOT NULL,
           nutrition_targets TEXT,
-          updated_at TEXT NOT NULL
+          updated_at TEXT NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
         )
       ''');
 
@@ -48,6 +51,15 @@ Future<Database> createInMemoryTestDatabase({bool seedData = true}) async {
           profile_id INTEGER NOT NULL,
           allergen_code TEXT NOT NULL,
           FOREIGN KEY (profile_id) REFERENCES user_profile (id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS app_session (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          current_user_id INTEGER,
+          updated_at TEXT NOT NULL,
+          FOREIGN KEY (current_user_id) REFERENCES users (id) ON DELETE SET NULL
         )
       ''');
 
@@ -99,6 +111,24 @@ Future<Database> createInMemoryTestDatabase({bool seedData = true}) async {
 
       if (seedData) {
         final now = DateTime.now().toIso8601String();
+
+        final guestProfileId = await db.insert('user_profile', {
+          'user_id': null,
+          'is_guest': 1,
+          'name': 'Linh',
+          'nutrition_targets': jsonEncode({'sugars': 10.0, 'sodium': 0.30}),
+          'updated_at': now,
+        });
+
+        await db.insert('user_allergen', {
+          'profile_id': guestProfileId,
+          'allergen_code': 'milk',
+        });
+        await db.insert('user_allergen', {
+          'profile_id': guestProfileId,
+          'allergen_code': 'peanuts',
+        });
+
         final productId1 = await db.insert('cached_product', {
           'barcode': '8934567890123',
           'product_name': 'Bánh yến mạch cacao',

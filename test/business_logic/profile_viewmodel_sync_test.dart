@@ -54,10 +54,26 @@ void main() {
 				updatedAt: '2026-01-01',
 			);
 
-			// User 2 has no saved profile yet
-			when(() => mockRepo.fetchUserProfile(2)).thenAnswer((_) async => null);
+			final user2Profile = UserProfile(
+				id: 2,
+				userId: 2,
+				name: 'Linh',
+				allergens: ['peanut'],
+				nutritionTargets: {'sugars': 10.0},
+				updatedAt: '2026-01-01',
+			);
+
+			var fetchCount = 0;
+			// First call returns null (no saved profile yet), second call returns user2Profile
+			when(() => mockRepo.fetchUserProfile(2)).thenAnswer((_) async {
+				if (fetchCount == 0) {
+					fetchCount++;
+					return null;
+				}
+				return user2Profile;
+			});
 			// Local profile exists
-			when(() => mockRepo.fetchUserProfile()).thenAnswer((_) async => localProfile);
+			when(() => mockRepo.fetchUserProfile(null)).thenAnswer((_) async => localProfile);
 			// Expect save to user 2
 			when(() => mockRepo.saveUserProfile(
 				userId: 2,

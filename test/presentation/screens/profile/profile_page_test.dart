@@ -346,9 +346,7 @@ void main() {
 
       await tester.enterText(find.byKey(const Key('profile_name_field')), 'Linh');
 
-      final sugarsCheckbox = find.byWidgetPredicate((widget) =>
-        widget is Checkbox && widget.value == true
-      ).first;
+      final sugarsCheckbox = find.byType(Checkbox).first;
       await tester.tap(sugarsCheckbox);
       await tester.pumpAndSettle();
 

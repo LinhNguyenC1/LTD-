@@ -87,7 +87,7 @@ class _ProfilePageState extends State<ProfilePage> {
 		'total_fat': TextEditingController(),
 		'protein_min': TextEditingController(),
 	};
-	final Set<String> _selectedNutrition = {'sugars', 'sodium', 'total_fat', 'protein_min'};
+	final Set<String> _selectedNutrition = {};
 	bool _isAddingNutrition = false;
 	int? _syncedUid;
 	bool _lastAuthStatus = false;
@@ -154,7 +154,9 @@ class _ProfilePageState extends State<ProfilePage> {
 			}
 			_selectedNutrition.clear();
 			for(final entry in profile.nutritionTargets.entries) {
-				_selectedNutrition.add(entry.key);
+				if (entry.value > 0) {
+					_selectedNutrition.add(entry.key);
+				}
 				if(!_nutritionLabels.containsKey(entry.key)) {
 					final found = _allNutritionSuggestions.firstWhere(
 						(s) => s['key'] == entry.key,
@@ -166,7 +168,7 @@ class _ProfilePageState extends State<ProfilePage> {
 					entry.key,
 					() => TextEditingController(),
 				);
-				if(entry.value == -1.0) {
+				if(entry.value <= 0) {
 					c.text = '';
 				} else {
 					c.text = entry.value.toString();
@@ -668,6 +670,7 @@ class _ProfilePageState extends State<ProfilePage> {
 															_selectedNutrition.add(entry.key);
 														} else {
 															_selectedNutrition.remove(entry.key);
+															controller.clear();
 														}
 													});
 												},
@@ -712,7 +715,7 @@ class _ProfilePageState extends State<ProfilePage> {
 									TextFormField(
 										key: Key('profile_target_${entry.key}'),
 										controller: controller,
-										enabled: isChecked,
+										enabled: true,
 										keyboardType: const TextInputType.numberWithOptions(decimal: true),
 										decoration: InputDecoration(
 											isDense: true,
@@ -733,15 +736,18 @@ class _ProfilePageState extends State<ProfilePage> {
 											fillColor: Colors.grey.shade100,
 										),
 										validator: (val) {
-											if (!isChecked) return null;
+											final isTargetActive = _selectedNutrition.contains(entry.key) || (val != null && val.trim().isNotEmpty);
+											if (!isTargetActive) return null;
 											return FormValidator.validatePositiveNumber(val, required: false);
 										},
 										onChanged: (val) {
-											if(!isChecked && val.trim().isNotEmpty) {
-												setState(() {
+											setState(() {
+												if (val.trim().isNotEmpty) {
 													_selectedNutrition.add(entry.key);
-												});
-											}
+												} else {
+													_selectedNutrition.remove(entry.key);
+												}
+											});
 										},
 									),
 								],
@@ -1180,7 +1186,7 @@ class _ProfilePageState extends State<ProfilePage> {
 													children: [
 														Icon(Icons.check_circle, size: 11, color: _primaryGreen),
 														SizedBox(width: 3),
-														Text('Đã đồng bộ', style: TextStyle(color: _primaryGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+														Text('Đã đăng nhập', style: TextStyle(color: _primaryGreen, fontSize: 10, fontWeight: FontWeight.bold)),
 													],
 												),
 											),
@@ -1241,7 +1247,7 @@ class _ProfilePageState extends State<ProfilePage> {
 									),
 									SizedBox(height: 2),
 									Text(
-										'Chỉnh sửa trên máy này · Đăng nhập để đồng bộ tài khoản',
+										'Lưu trữ trên máy này · Đăng nhập để quản lý hồ sơ tài khoản',
 										style: TextStyle(
 											fontSize: 12,
 											color: _subText,

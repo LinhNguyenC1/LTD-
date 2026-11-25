@@ -16,8 +16,13 @@ import 'presentation/screens/profile/profile_page.dart';
 import 'presentation/screens/product/detail_page.dart';
 import 'presentation/screens/compare/compare_select_page.dart';
 
-void main() {
+import 'core/services/notification_service.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await NotificationService.instance.initialize();
+  } catch (_) {}
   runApp(const AnLanhApp());
 }
 

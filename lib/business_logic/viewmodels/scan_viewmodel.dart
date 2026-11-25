@@ -82,7 +82,7 @@ class ScanViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> lookupBarcode(String barcode) async {
+  Future<bool> lookupBarcode(String barcode, {int? activeUserId}) async {
     final clean = barcode.trim();
     if (!BarcodeValidator.isValid(clean)) {
       _status = ScanStatus.invalidBarcode;
@@ -122,7 +122,7 @@ class ScanViewModel extends ChangeNotifier {
         _scannedNutrition = null;
       }
 
-      final profile = await _profileRepository.fetchUserProfile();
+      final profile = await _profileRepository.fetchUserProfile(activeUserId);
       final userAllergens = profile?.allergens ?? [];
       final userTargets = profile?.nutritionTargets ?? {};
 

@@ -34,7 +34,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onConfigure: _onConfigure,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
@@ -46,13 +46,29 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    await db.execute('DROP TABLE IF EXISTS scan_history');
-    await db.execute('DROP TABLE IF EXISTS product_nutrition');
-    await db.execute('DROP TABLE IF EXISTS cached_product');
-    await db.execute('DROP TABLE IF EXISTS user_allergen');
-    await db.execute('DROP TABLE IF EXISTS user_profile');
-    await db.execute('DROP TABLE IF EXISTS users');
-    await _createDB(db, newVersion);
+    if (oldVersion < 4) {
+      // Incremental migration to Version 4 preserving user data
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS app_session (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          current_user_id INTEGER,
+          updated_at TEXT NOT NULL,
+          FOREIGN KEY (current_user_id) REFERENCES users (id) ON DELETE SET NULL
+        )
+      ''');
+
+      // Check if user_profile table needs user_id and is_guest columns
+      final tableInfo = await db.rawQuery('PRAGMA table_info(user_profile)');
+      final hasUserId = tableInfo.any((column) => column['name'] == 'user_id');
+
+      if (!hasUserId) {
+        await db.execute('ALTER TABLE user_profile ADD COLUMN user_id INTEGER UNIQUE');
+        await db.execute('ALTER TABLE user_profile ADD COLUMN is_guest INTEGER NOT NULL DEFAULT 0');
+
+        // Existing profile ID 1 is assigned as Guest Profile
+        await db.execute('UPDATE user_profile SET is_guest = 1 WHERE id = 1');
+      }
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -68,10 +84,13 @@ class DatabaseHelper {
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS user_profile (
-        id INTEGER PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER UNIQUE,
+        is_guest INTEGER NOT NULL DEFAULT 0,
         name TEXT NOT NULL,
         nutrition_targets TEXT,
-        updated_at TEXT NOT NULL
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
       )
     ''');
 
@@ -81,6 +100,15 @@ class DatabaseHelper {
         profile_id INTEGER NOT NULL,
         allergen_code TEXT NOT NULL,
         FOREIGN KEY (profile_id) REFERENCES user_profile (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS app_session (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        current_user_id INTEGER,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (current_user_id) REFERENCES users (id) ON DELETE SET NULL
       )
     ''');
 
@@ -135,6 +163,24 @@ class DatabaseHelper {
 
   Future<void> _seedSampleData(Database db) async {
     final now = DateTime.now().toIso8601String();
+
+    // Default Guest Profile (is_guest = 1, user_id = null)
+    final guestProfileId = await db.insert('user_profile', {
+      'user_id': null,
+      'is_guest': 1,
+      'name': 'Linh',
+      'nutrition_targets': jsonEncode({'sugars': 10.0, 'sodium': 0.30}),
+      'updated_at': now,
+    });
+
+    await db.insert('user_allergen', {
+      'profile_id': guestProfileId,
+      'allergen_code': 'milk',
+    });
+    await db.insert('user_allergen', {
+      'profile_id': guestProfileId,
+      'allergen_code': 'peanuts',
+    });
 
     final productId1 = await db.insert('cached_product', {
       'barcode': '8934567890123',
