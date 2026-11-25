@@ -1,4 +1,4 @@
-# 🚀 Hướng Dẫn Cài Đặt & Chạy Demo Dự Án "Ăn Lành"
+git# 🚀 Hướng Dẫn Cài Đặt & Chạy Demo Dự Án "Ăn Lành"
 
 Tài liệu này hướng dẫn chi tiết từng bước cho thành viên mới (hoặc người đánh giá) để clone dự án **Ăn Lành** từ GitHub về Android Studio và khởi chạy bản demo mockup frontend.
 

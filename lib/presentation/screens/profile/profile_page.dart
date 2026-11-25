@@ -70,7 +70,6 @@ class _ProfilePageState extends State<ProfilePage> {
 		'milk': 'Sữa (Lactose / Bột sữa)',
 		'peanut': 'Đậu phộng (Lạc)',
 		'gluten': 'Gluten (Lúa mì)',
-		'soy': 'Đậu nành (Soy / Lecithin)',
 	};
 	final Set<String> _selectedAllergens = {};
 	bool _isAddingAllergen = false;
@@ -79,15 +78,13 @@ class _ProfilePageState extends State<ProfilePage> {
 		'sugars': 'Đường tối đa (g / 100g)',
 		'sodium': 'Muối / Natri tối đa (g / 100g)',
 		'total_fat': 'Chất béo tổng tối đa (g / 100g)',
-		'protein_min': 'Đạm tối thiểu (g / 100g)',
 	};
 	final Map<String, TextEditingController> _nutritionControllers = {
 		'sugars': TextEditingController(),
 		'sodium': TextEditingController(),
 		'total_fat': TextEditingController(),
-		'protein_min': TextEditingController(),
 	};
-	final Set<String> _selectedNutrition = {'sugars', 'sodium', 'total_fat', 'protein_min'};
+	final Set<String> _selectedNutrition = {};
 	bool _isAddingNutrition = false;
 	int? _syncedUid;
 	bool _lastAuthStatus = false;
@@ -154,7 +151,9 @@ class _ProfilePageState extends State<ProfilePage> {
 			}
 			_selectedNutrition.clear();
 			for(final entry in profile.nutritionTargets.entries) {
-				_selectedNutrition.add(entry.key);
+				if (entry.value > 0) {
+					_selectedNutrition.add(entry.key);
+				}
 				if(!_nutritionLabels.containsKey(entry.key)) {
 					final found = _allNutritionSuggestions.firstWhere(
 						(s) => s['key'] == entry.key,
@@ -166,7 +165,7 @@ class _ProfilePageState extends State<ProfilePage> {
 					entry.key,
 					() => TextEditingController(),
 				);
-				if(entry.value == -1.0) {
+				if(entry.value <= 0) {
 					c.text = '';
 				} else {
 					c.text = entry.value.toString();
@@ -395,13 +394,22 @@ class _ProfilePageState extends State<ProfilePage> {
 	}
 
 	Widget _buildAllergenSection() {
+		final sortedAllergyEntries = _allergyLabels.entries.toList()
+			..sort((a, b) {
+				final aSelected = _selectedAllergens.contains(a.key);
+				final bSelected = _selectedAllergens.contains(b.key);
+				if (aSelected && !bSelected) return -1;
+				if (!aSelected && bSelected) return 1;
+				return 0;
+			});
+
 		return _buildSectionCard(
 			title: 'Dị ứng thực phẩm',
 			subtitle: 'Cảnh báo đỏ tuyệt đối khi phát hiện thành phần',
 			child: Column(
 				crossAxisAlignment: CrossAxisAlignment.stretch,
 				children: [
-					..._allergyLabels.entries.map((entry) {
+					...sortedAllergyEntries.map((entry) {
 						final isChecked = _selectedAllergens.contains(entry.key);
 						return Padding(
 							padding: const EdgeInsets.symmetric(vertical: 2),
@@ -668,6 +676,7 @@ class _ProfilePageState extends State<ProfilePage> {
 															_selectedNutrition.add(entry.key);
 														} else {
 															_selectedNutrition.remove(entry.key);
+															controller.clear();
 														}
 													});
 												},
@@ -712,7 +721,7 @@ class _ProfilePageState extends State<ProfilePage> {
 									TextFormField(
 										key: Key('profile_target_${entry.key}'),
 										controller: controller,
-										enabled: isChecked,
+										enabled: true,
 										keyboardType: const TextInputType.numberWithOptions(decimal: true),
 										decoration: InputDecoration(
 											isDense: true,
@@ -733,15 +742,18 @@ class _ProfilePageState extends State<ProfilePage> {
 											fillColor: Colors.grey.shade100,
 										),
 										validator: (val) {
-											if (!isChecked) return null;
+											final isTargetActive = _selectedNutrition.contains(entry.key) || (val != null && val.trim().isNotEmpty);
+											if (!isTargetActive) return null;
 											return FormValidator.validatePositiveNumber(val, required: false);
 										},
 										onChanged: (val) {
-											if(!isChecked && val.trim().isNotEmpty) {
-												setState(() {
+											setState(() {
+												if (val.trim().isNotEmpty) {
 													_selectedNutrition.add(entry.key);
-												});
-											}
+												} else {
+													_selectedNutrition.remove(entry.key);
+												}
+											});
 										},
 									),
 								],
@@ -920,82 +932,124 @@ class _ProfilePageState extends State<ProfilePage> {
 		final noteController = TextEditingController(
 			text: 'Tôi dị ứng sữa và đậu phộng, muốn giảm đường và muối',
 		);
+		bool aiConsent = true;
 
 		final shouldProceed = await showModalBottomSheet<bool>(
 			context: context,
 			isScrollControlled: true,
 			backgroundColor: Colors.transparent,
 			builder: (ctx) {
-				return Padding(
-					padding: EdgeInsets.only(
-						bottom: MediaQuery.of(ctx).viewInsets.bottom,
-					),
-					child: Container(
-						padding: const EdgeInsets.all(20),
-						decoration: const BoxDecoration(
-							color: Colors.white,
-							borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-						),
-						child: Column(
-							mainAxisSize: MainAxisSize.min,
-							crossAxisAlignment: CrossAxisAlignment.start,
-							children: [
-								Row(
+				return StatefulBuilder(
+					builder: (dialogCtx, setDialogState) {
+						return Padding(
+							padding: EdgeInsets.only(
+								bottom: MediaQuery.of(dialogCtx).viewInsets.bottom,
+							),
+							child: Container(
+								padding: const EdgeInsets.all(20),
+								decoration: const BoxDecoration(
+									color: Colors.white,
+									borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+								),
+								child: Column(
+									mainAxisSize: MainAxisSize.min,
+									crossAxisAlignment: CrossAxisAlignment.start,
 									children: [
-										Container(
-											padding: const EdgeInsets.all(8),
-											decoration: BoxDecoration(
-												color: _softGreenBg,
-												borderRadius: BorderRadius.circular(10),
-											),
-											child: const Icon(Icons.auto_awesome_rounded, color: _primaryGreen, size: 22),
+										Row(
+											children: [
+												Container(
+													padding: const EdgeInsets.all(8),
+													decoration: BoxDecoration(
+														color: _softGreenBg,
+														borderRadius: BorderRadius.circular(10),
+													),
+													child: const Icon(Icons.auto_awesome_rounded, color: _primaryGreen, size: 22),
+												),
+												const SizedBox(width: 12),
+												const Expanded(
+													child: Text(
+														'Gợi ý tiêu chí từ ghi chú',
+														style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _inkText),
+													),
+												),
+												IconButton(
+													icon: const Icon(Icons.close),
+													onPressed: () => Navigator.pop(dialogCtx, false),
+												),
+											],
 										),
-										const SizedBox(width: 12),
-										const Expanded(
-											child: Text(
-												'Gợi ý tiêu chí từ ghi chú',
-												style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _inkText),
+										const SizedBox(height: 12),
+										const Text(
+											'Nhập mô tả thói quen, bệnh lý hoặc sở thích ăn uống của bạn để tự động phân tích và gợi ý tiêu chí dinh dưỡng:',
+											style: TextStyle(fontSize: 13, color: _subText, height: 1.4),
+										),
+										const SizedBox(height: 12),
+										TextField(
+											controller: noteController,
+											maxLines: 3,
+											decoration: InputDecoration(
+												hintText: 'Ví dụ: Tôi dị ứng sữa và đậu phộng, muốn giảm đường và muối...',
+												filled: true,
+												fillColor: _warmBg,
+												border: OutlineInputBorder(
+													borderRadius: BorderRadius.circular(12),
+													borderSide: const BorderSide(color: Colors.black12),
+												),
 											),
 										),
-										IconButton(
-											icon: const Icon(Icons.close),
-											onPressed: () => Navigator.pop(ctx, false),
+										const SizedBox(height: 12),
+										// Privacy & AI Consent Checkbox
+										Row(
+											children: [
+												SizedBox(
+													width: 24,
+													height: 24,
+													child: Checkbox(
+														value: aiConsent,
+														activeColor: _primaryGreen,
+														shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+														onChanged: (val) {
+															setDialogState(() {
+																aiConsent = val ?? false;
+															});
+														},
+													),
+												),
+												const SizedBox(width: 10),
+												Expanded(
+													child: GestureDetector(
+														onTap: () {
+															setDialogState(() {
+																aiConsent = !aiConsent;
+															});
+														},
+														child: const Text(
+															'Tôi đồng ý chia sẻ ghi chú để phân tích bằng Cloud AI (Google Gemini)',
+															style: TextStyle(fontSize: 12, color: _inkText, fontWeight: FontWeight.w500),
+														),
+													),
+												),
+											],
+										),
+										const SizedBox(height: 16),
+										FilledButton.icon(
+											onPressed: () => Navigator.pop(dialogCtx, true),
+											icon: const Icon(Icons.auto_awesome_rounded),
+											label: Text(
+												aiConsent ? 'Phân tích ghi chú (Cloud AI)' : 'Phân tích ghi chú (Offline)',
+												style: const TextStyle(fontWeight: FontWeight.bold),
+											),
+											style: FilledButton.styleFrom(
+												backgroundColor: _primaryGreen,
+												minimumSize: const Size.fromHeight(48),
+												shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+											),
 										),
 									],
 								),
-								const SizedBox(height: 12),
-								const Text(
-									'Nhập mô tả thói quen, bệnh lý hoặc sở thích ăn uống của bạn để tự động phân tích và gợi ý tiêu chí dinh dưỡng:',
-									style: TextStyle(fontSize: 13, color: _subText, height: 1.4),
-								),
-								const SizedBox(height: 12),
-								TextField(
-									controller: noteController,
-									maxLines: 3,
-									decoration: InputDecoration(
-										hintText: 'Ví dụ: Tôi dị ứng sữa và đậu phộng, muốn giảm đường và muối...',
-										filled: true,
-										fillColor: _warmBg,
-										border: OutlineInputBorder(
-											borderRadius: BorderRadius.circular(12),
-											borderSide: const BorderSide(color: Colors.black12),
-										),
-									),
-								),
-								const SizedBox(height: 16),
-								FilledButton.icon(
-									onPressed: () => Navigator.pop(ctx, true),
-									icon: const Icon(Icons.auto_awesome_rounded),
-									label: const Text('Phân tích ghi chú', style: TextStyle(fontWeight: FontWeight.bold)),
-									style: FilledButton.styleFrom(
-										backgroundColor: _primaryGreen,
-										minimumSize: const Size.fromHeight(48),
-										shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-									),
-								),
-							],
-						),
-					),
+							),
+						);
+					},
 				);
 			},
 		);
@@ -1006,6 +1060,7 @@ class _ProfilePageState extends State<ProfilePage> {
 				MaterialPageRoute(
 					builder: (_) => AiAnalysisPage(
 						noteText: noteController.text,
+						aiConsent: aiConsent,
 						profileName: _nameController.text.trim().isNotEmpty
 							? _nameController.text.trim()
 							: 'bạn',
@@ -1017,7 +1072,20 @@ class _ProfilePageState extends State<ProfilePage> {
 				int count = 0;
 				setState(() {
 					if(result is Map) {
-						if(result['allergens'] is List) {
+						if (result['allergenDetails'] is List) {
+							final list = result['allergenDetails'] as List;
+							for (final item in list) {
+								if (item is Map) {
+									final code = item['key']?.toString() ?? '';
+									final title = item['title']?.toString().replaceAll('Dị ứng ', '') ?? code;
+									if (code.isNotEmpty) {
+										_selectedAllergens.add(code);
+										_allergyLabels[code] = title;
+										count++;
+									}
+								}
+							}
+						} else if(result['allergens'] is List) {
 							final list = result['allergens'] as List;
 							for(final a in list) {
 								final code = a.toString();
@@ -1032,7 +1100,24 @@ class _ProfilePageState extends State<ProfilePage> {
 								count++;
 							}
 						}
-						if(result['nutrition'] is Map) {
+
+						if (result['nutritionDetails'] is List) {
+							final list = result['nutritionDetails'] as List;
+							for (final item in list) {
+								if (item is Map) {
+									final key = item['key']?.toString() ?? '';
+									final title = item['title']?.toString() ?? key;
+									final val = (item['value'] as num?)?.toDouble() ?? 0.0;
+									if (key.isNotEmpty) {
+										_selectedNutrition.add(key);
+										_nutritionLabels[key] = title;
+										final c = _nutritionControllers.putIfAbsent(key, () => TextEditingController());
+										c.text = val > 0 ? val.toString() : '';
+										count++;
+									}
+								}
+							}
+						} else if(result['nutrition'] is Map) {
 							final map = result['nutrition'] as Map;
 							map.forEach((k, v) {
 								final key = k.toString();
@@ -1053,14 +1138,6 @@ class _ProfilePageState extends State<ProfilePage> {
 						if(count == 0 && result['count'] is int) {
 							count = result['count'] as int;
 						}
-					} else if(result is int) {
-						count = result;
-						_selectedAllergens.add('milk');
-						_selectedAllergens.add('peanut');
-						_selectedNutrition.add('sugars');
-						_nutritionControllers.putIfAbsent('sugars', () => TextEditingController()).text = '10';
-						_selectedNutrition.add('sodium');
-						_nutritionControllers.putIfAbsent('sodium', () => TextEditingController()).text = '0.3';
 					}
 				});
 				ScaffoldMessenger.of(context).showSnackBar(
@@ -1180,7 +1257,7 @@ class _ProfilePageState extends State<ProfilePage> {
 													children: [
 														Icon(Icons.check_circle, size: 11, color: _primaryGreen),
 														SizedBox(width: 3),
-														Text('Đã đồng bộ', style: TextStyle(color: _primaryGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+														Text('Đã đăng nhập', style: TextStyle(color: _primaryGreen, fontSize: 10, fontWeight: FontWeight.bold)),
 													],
 												),
 											),
@@ -1212,7 +1289,9 @@ class _ProfilePageState extends State<ProfilePage> {
 								if (context.mounted) {
 									final profileVm = context.read<ProfileViewModel>();
 									await profileVm.onLogout();
-									_populateFormFromViewModel(profileVm);
+									if (context.mounted) {
+										_populateFormFromViewModel(profileVm);
+									}
 								}
 							},
 							child: const Text('Đăng xuất'),
@@ -1241,7 +1320,7 @@ class _ProfilePageState extends State<ProfilePage> {
 									),
 									SizedBox(height: 2),
 									Text(
-										'Chỉnh sửa trên máy này · Đăng nhập để đồng bộ tài khoản',
+										'Lưu trữ trên máy này · Đăng nhập để quản lý hồ sơ tài khoản',
 										style: TextStyle(
 											fontSize: 12,
 											color: _subText,

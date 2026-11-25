@@ -2,6 +2,8 @@ import 'dart:convert';
 
 class UserProfile {
   final int id;
+  final int? userId;
+  final bool isGuest;
   final String name;
   final Map<String, double> nutritionTargets;
   final List<String> allergens;
@@ -9,6 +11,8 @@ class UserProfile {
 
   UserProfile({
     this.id = 1,
+    this.userId,
+    this.isGuest = false,
     required this.name,
     this.nutritionTargets = const {},
     this.allergens = const [],
@@ -17,7 +21,9 @@ class UserProfile {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id > 0) 'id': id,
+      'user_id': userId,
+      'is_guest': isGuest ? 1 : 0,
       'name': name,
       'nutrition_targets': jsonEncode(nutritionTargets),
       'updated_at': updatedAt,
@@ -40,6 +46,8 @@ class UserProfile {
 
     return UserProfile(
       id: map['id'] as int? ?? 1,
+      userId: map['user_id'] as int?,
+      isGuest: (map['is_guest'] as int? ?? 0) == 1 || map['user_id'] == null,
       name: map['name'] as String? ?? '',
       nutritionTargets: parsedTargets,
       allergens: allergens,

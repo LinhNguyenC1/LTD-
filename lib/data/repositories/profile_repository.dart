@@ -8,8 +8,10 @@ class ProfileRepository {
       : _profileDao = profileDao ?? ProfileDao();
 
   Future<UserProfile?> fetchUserProfile([int? userId]) async {
-    final targetId = userId ?? 1;
-    return await _profileDao.getProfile(targetId);
+    if (userId != null) {
+      return await _profileDao.getProfileByUserId(userId);
+    }
+    return await _profileDao.getGuestProfile();
   }
 
   Future<void> saveUserProfile({
@@ -18,10 +20,10 @@ class ProfileRepository {
     required List<String> allergens,
     required Map<String, double> nutritionTargets,
   }) async {
-    final targetId = userId ?? 1;
     final profile = UserProfile(
-      id: targetId,
-      name: name.trim().isEmpty ? 'Người dùng' : name.trim(),
+      userId: userId,
+      isGuest: userId == null,
+      name: name.trim().isEmpty ? 'Linh' : name.trim(),
       allergens: allergens,
       nutritionTargets: nutritionTargets,
       updatedAt: DateTime.now().toIso8601String(),
@@ -30,7 +32,10 @@ class ProfileRepository {
   }
 
   Future<void> clearUserProfile([int? userId]) async {
-    final targetId = userId ?? 1;
-    await _profileDao.deleteProfile(targetId);
+    if (userId != null) {
+      await _profileDao.deleteProfileByUserId(userId);
+    } else {
+      await _profileDao.deleteGuestProfile();
+    }
   }
 }

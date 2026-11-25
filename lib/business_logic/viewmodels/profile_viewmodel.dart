@@ -31,11 +31,7 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (_activeUserId != null) {
-        _profile = await _repository.fetchUserProfile(_activeUserId);
-      } else {
-        _profile = await _repository.fetchUserProfile();
-      }
+      _profile = await _repository.fetchUserProfile(_activeUserId);
     } catch (e) {
       _errorMessage = 'Lỗi khi tải hồ sơ: $e';
     } finally {
@@ -58,14 +54,15 @@ class ProfileViewModel extends ChangeNotifier {
       if (existingAccountProfile != null) {
         _profile = existingAccountProfile;
       } else {
-        final localProfile = await _repository.fetchUserProfile();
+        final guestProfile = await _repository.fetchUserProfile(null);
         final profileToSave = UserProfile(
-          id: uid,
-          name: (localProfile != null && localProfile.name.trim().isNotEmpty)
-              ? localProfile.name
+          userId: uid,
+          isGuest: false,
+          name: (guestProfile != null && guestProfile.name.trim().isNotEmpty)
+              ? guestProfile.name
               : user.username,
-          allergens: localProfile?.allergens ?? [],
-          nutritionTargets: localProfile?.nutritionTargets ?? {},
+          allergens: guestProfile?.allergens ?? [],
+          nutritionTargets: guestProfile?.nutritionTargets ?? {},
           updatedAt: DateTime.now().toIso8601String(),
         );
         await _repository.saveUserProfile(
@@ -74,7 +71,7 @@ class ProfileViewModel extends ChangeNotifier {
           allergens: profileToSave.allergens,
           nutritionTargets: profileToSave.nutritionTargets,
         );
-        _profile = profileToSave;
+        _profile = await _repository.fetchUserProfile(uid);
       }
     } catch (e) {
       _errorMessage = 'Lỗi khi đồng bộ hồ sơ vào tài khoản: $e';
@@ -86,7 +83,7 @@ class ProfileViewModel extends ChangeNotifier {
 
   Future<void> onLogout() async {
     _activeUserId = null;
-    await loadProfile();
+    await loadProfile(userId: null);
   }
 
   Future<bool> saveProfile({
@@ -101,22 +98,13 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (targetId != null) {
-        await _repository.saveUserProfile(
-          userId: targetId,
-          name: name,
-          allergens: allergens,
-          nutritionTargets: nutritionTargets,
-        );
-        _profile = await _repository.fetchUserProfile(targetId);
-      } else {
-        await _repository.saveUserProfile(
-          name: name,
-          allergens: allergens,
-          nutritionTargets: nutritionTargets,
-        );
-        _profile = await _repository.fetchUserProfile();
-      }
+      await _repository.saveUserProfile(
+        userId: targetId,
+        name: name,
+        allergens: allergens,
+        nutritionTargets: nutritionTargets,
+      );
+      _profile = await _repository.fetchUserProfile(targetId);
       return true;
     } catch (e) {
       _errorMessage = 'Không thể lưu hồ sơ: $e';
@@ -134,11 +122,7 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (targetId != null) {
-        await _repository.clearUserProfile(targetId);
-      } else {
-        await _repository.clearUserProfile();
-      }
+      await _repository.clearUserProfile(targetId);
       _profile = null;
       return true;
     } catch (e) {

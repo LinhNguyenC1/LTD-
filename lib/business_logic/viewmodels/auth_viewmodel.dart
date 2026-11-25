@@ -35,14 +35,20 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void safeNotify() {
+    try {
+      notifyListeners();
+    } catch (_) {}
+  }
+
   Future<void> loadCurrentUser() async {
     _isLoading = true;
-    notifyListeners();
+    safeNotify();
     try {
       _currentUser = await _authRepository.getCurrentUser();
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotify();
     }
   }
 

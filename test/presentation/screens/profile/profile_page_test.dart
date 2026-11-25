@@ -68,7 +68,6 @@ void main() {
       expect(find.byKey(const Key('profile_target_sugars')), findsOneWidget);
       expect(find.byKey(const Key('profile_target_sodium')), findsOneWidget);
       expect(find.byKey(const Key('profile_target_total_fat')), findsOneWidget);
-      expect(find.byKey(const Key('profile_target_protein_min')), findsOneWidget);
       expect(find.byKey(const Key('profile_save_button')), findsOneWidget);
       expect(find.text('Xóa hồ sơ'), findsNothing);
     });
@@ -346,9 +345,7 @@ void main() {
 
       await tester.enterText(find.byKey(const Key('profile_name_field')), 'Linh');
 
-      final sugarsCheckbox = find.byWidgetPredicate((widget) =>
-        widget is Checkbox && widget.value == true
-      ).first;
+      final sugarsCheckbox = find.byType(Checkbox).first;
       await tester.tap(sugarsCheckbox);
       await tester.pumpAndSettle();
 
