@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../business_logic/viewmodels/auth_viewmodel.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/validators/form_validator.dart';
+import '../../../business_logic/viewmodels/profile_viewmodel.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -46,15 +47,21 @@ class _RegisterPageState extends State<RegisterPage> {
     );
 
     if (success && mounted) {
+      final user = authVm.currentUser;
+      if (user != null) {
+        try {
+          final profileVm = context.read<ProfileViewModel?>();
+          await profileVm?.syncOnLogin(user);
+        } catch (_) {}
+      }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authVm.successMessage ?? 'Đăng ký tài khoản thành công!'),
           backgroundColor: primaryGreen,
         ),
       );
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 

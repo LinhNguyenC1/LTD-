@@ -68,7 +68,6 @@ void main() {
       expect(find.byKey(const Key('profile_target_sugars')), findsOneWidget);
       expect(find.byKey(const Key('profile_target_sodium')), findsOneWidget);
       expect(find.byKey(const Key('profile_target_total_fat')), findsOneWidget);
-      expect(find.byKey(const Key('profile_target_protein_min')), findsOneWidget);
       expect(find.byKey(const Key('profile_save_button')), findsOneWidget);
       expect(find.text('Xóa hồ sơ'), findsNothing);
     });

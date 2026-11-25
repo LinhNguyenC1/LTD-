@@ -7,10 +7,12 @@ class AiAnalysisPage extends StatefulWidget {
 	const AiAnalysisPage({
 		super.key,
 		required this.noteText,
+		this.aiConsent = true,
 		this.profileName = 'bạn',
 	});
 
 	final String noteText;
+	final bool aiConsent;
 	final String profileName;
 
 	@override
@@ -27,7 +29,7 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
 	void initState() {
 		super.initState();
 		_criteria = AiNoteParser.parse(widget.noteText);
-		if (AiService.activeApiKey.isNotEmpty) {
+		if (widget.aiConsent && AiService.activeApiKey.isNotEmpty) {
 			_runCloudAnalysis();
 		}
 	}
@@ -35,7 +37,10 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
 	Future<void> _runCloudAnalysis() async {
 		setState(() => _isAnalyzing = true);
 		try {
-			final res = await AiService.analyzeNote(widget.noteText);
+			final res = await AiService.analyzeNote(
+				widget.noteText,
+				aiConsent: widget.aiConsent,
+			);
 			if (mounted && res.criteria.isNotEmpty) {
 				setState(() {
 					_criteria = res.criteria;
@@ -259,8 +264,10 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
 											const SizedBox(height: 4),
 											Text(
 												_isFromCloud
-													? 'Ghi chú được phân tích qua Google Gemini AI an toàn. Không lưu trữ thông tin cá nhân trên đám mây.'
-													: 'Ghi chú được phân tích hoàn toàn cục bộ trên thiết bị của bạn. Không gửi bất kỳ dữ liệu nào ra mạng ngoài.',
+													? 'Ghi chú được phân tích qua Google Gemini AI an toàn. Dữ liệu được gửi có sự đồng ý của bạn.'
+													: widget.aiConsent
+														? 'Ghi chú được phân tích hoàn toàn cục bộ trên thiết bị (Offline).'
+														: 'Chưa cấp quyền gửi dữ liệu cho AI đám mây. Ghi chú được phân tích hoàn toàn cục bộ trên thiết bị.',
 												style: const TextStyle(fontSize: 11, color: inkText, height: 1.35),
 											),
 										],
@@ -434,16 +441,25 @@ class _AiAnalysisPageState extends State<AiAnalysisPage> {
 									.where((c) => c.type == 'allergen' && c.allergenKey != null)
 									.map((c) => c.allergenKey!)
 									.toList();
+							final allergenDetails = selectedItems
+									.where((c) => c.type == 'allergen' && c.allergenKey != null)
+									.map((c) => {'key': c.allergenKey!, 'title': c.title})
+									.toList();
 							final nutritionMap = <String, double>{};
+							final nutritionDetails = <Map<String, dynamic>>[];
 							for (final c in selectedItems.where(
 								(c) => c.type == 'nutrition' && c.nutritionKey != null,
 							)) {
-								nutritionMap[c.nutritionKey!] = c.targetValue ?? 0.0;
+								final val = c.targetValue ?? 0.0;
+								nutritionMap[c.nutritionKey!] = val;
+								nutritionDetails.add({'key': c.nutritionKey!, 'title': c.title, 'value': val});
 							}
 
 							Navigator.pop(context, {
 								'allergens': selectedAllergens,
+								'allergenDetails': allergenDetails,
 								'nutrition': nutritionMap,
+								'nutritionDetails': nutritionDetails,
 								'count': selectedItems.length,
 								// Legacy backward compatibility flags
 								'milk': selectedAllergens.contains('milk'),

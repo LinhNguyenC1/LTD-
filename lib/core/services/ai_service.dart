@@ -16,7 +16,7 @@ class AiServiceResult {
 
 class AiService {
   static const String _defaultModel = 'gemini-2.5-flash';
-  static String? userApiKey = 'AIzaSyC1sae0YW8_ol3EFCH-J_krwISZxS28DVA';
+  static String? userApiKey; // Secured: No hardcoded API key in repo
 
   static String get activeApiKey {
     if (userApiKey != null && userApiKey!.trim().isNotEmpty) {
@@ -28,16 +28,26 @@ class AiService {
 
   static Future<AiServiceResult> analyzeNote(
     String noteText, {
+    bool aiConsent = true,
     http.Client? client,
     String? customApiKey,
   }) async {
+    final trimmedNote = noteText.trim();
+    if (trimmedNote.isEmpty) {
+      return AiServiceResult(
+        criteria: [],
+        isFromCloudAi: false,
+        providerName: 'Không có nội dung',
+      );
+    }
+
     final key = (customApiKey != null && customApiKey.trim().isNotEmpty)
         ? customApiKey.trim()
         : activeApiKey;
 
-    // Fallback immediately to offline rule-based parser if no API key
-    if (key.isEmpty) {
-      final localCriteria = AiNoteParser.parse(noteText);
+    // Privacy Protection: If user did NOT consent to cloud AI sharing, or no API key, use Offline Rule Parser
+    if (!aiConsent || key.isEmpty) {
+      final localCriteria = AiNoteParser.parse(trimmedNote);
       return AiServiceResult(
         criteria: localCriteria,
         isFromCloudAi: false,
@@ -53,27 +63,27 @@ class AiService {
 
       final prompt = '''
 Bạn là chuyên gia phân tích dị ứng và tiêu chuẩn dinh dưỡng thực phẩm.
-Phân tích ghi chú người dùng sau: "$noteText"
+Phân tích ghi chú người dùng sau: "$trimmedNote"
 
-Hãy trả về duy nhất chuỗi JSON hợp lệ (không kèm markdown) theo cấu trúc:
+Hãy trả về duy nhất chuỗi JSON hợp lệ (không kèm markdown ```) theo cấu trúc:
 {
   "allergens": [
     {
-      "key": "mã dị ứng (chỉ chọn từ: milk, peanut, gluten, soy, egg, seafood, shrimp, crab, fish, sesame, chili, msg, beef)",
-      "title": "Tên dị ứng",
-      "quote": "từ trích dẫn trong ghi chú"
+      "key": "mã_dị_ứng_ngắn_gọn (vd: milk, peanut, orange, apple, shrimp, egg, seafood...)",
+      "title": "Tên chất dị ứng",
+      "quote": "từ trích dẫn nguyên văn trong ghi chú"
     }
   ],
   "nutrition": [
     {
-      "key": "mã dinh dưỡng (chỉ chọn từ: sugars, sodium, total_fat, protein_min, calories, fiber)",
-      "title": "Tên chỉ số",
+      "key": "mã_chỉ_số (vd: sugars, sodium, total_fat, protein_min, calories, fiber)",
+      "title": "Tên tiêu chí dinh dưỡng / mục tiêu",
       "limit": số_thực_ngưỡng_gợi_ý,
-      "quote": "từ trích dẫn trong ghi chú"
+      "quote": "từ trích dẫn nguyên văn trong ghi chú"
     }
   ]
 }
-Nếu không có chất dị ứng hoặc chỉ số nào, trả về mảng rỗng.
+Nếu ghi chú không chứa tiêu chí ăn uống/dị ứng/dinh dưỡng nào, trả về: {"allergens": [], "nutrition": []}.
 ''';
 
       final response = await httpClient
@@ -106,26 +116,24 @@ Nếu không có chất dị ứng hoặc chỉ số nào, trả về mảng r�
             final rawText = parts.first['text'] as String?;
             if (rawText != null && rawText.trim().isNotEmpty) {
               final parsedCriteria = _parseGeminiJson(rawText.trim());
-              if (parsedCriteria.isNotEmpty) {
-                return AiServiceResult(
-                  criteria: parsedCriteria,
-                  isFromCloudAi: true,
-                  providerName: 'Google Gemini 2.5 Flash',
-                );
-              }
+              return AiServiceResult(
+                criteria: parsedCriteria,
+                isFromCloudAi: true,
+                providerName: 'Google Gemini 2.5 Flash',
+              );
             }
           }
         }
       }
     } catch (_) {
-      // Fallback smoothly on network/timeout/error
+      // Fallback smoothly on network error, timeout, or invalid API key
     } finally {
       if (client == null) {
         httpClient.close();
       }
     }
 
-    final localCriteria = AiNoteParser.parse(noteText);
+    final localCriteria = AiNoteParser.parse(trimmedNote);
     return AiServiceResult(
       criteria: localCriteria,
       isFromCloudAi: false,

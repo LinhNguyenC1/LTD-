@@ -108,7 +108,7 @@ class AiNoteParser {
 		final norm = _normalize(trimmed);
 		final List<ExtractedCriterion> list = [];
 
-		// 1. Dietary Focus
+		// 1. Dietary Focus & Goals
 		if (_containsWord(norm, 'keto') || norm.contains('low carb') || norm.contains('lowcarb')) {
 			list.add(ExtractedCriterion(
 				id: 'diet_keto',
@@ -119,7 +119,27 @@ class AiNoteParser {
 			));
 		}
 
-		// 2. Allergens
+		if (_containsWord(norm, 'tang can') || _containsWord(norm, 'tang ky') || norm.contains('tăng cân') || norm.contains('tăng ký')) {
+			list.add(ExtractedCriterion(
+				id: 'goal_weight_gain',
+				title: 'Mục tiêu: Tăng cân',
+				subtitle: 'Tăng lượng Calo và Bổ sung Đạm dinh dưỡng phong phú',
+				quote: _extractSnippet(trimmed, ['tăng cân', 'tang can', 'tăng ký', 'tang ky']),
+				type: 'diet',
+			));
+		}
+
+		if (_containsWord(norm, 'chay') || norm.contains('ăn chay') || norm.contains('món chay')) {
+			list.add(ExtractedCriterion(
+				id: 'diet_veg',
+				title: 'Ưu tiên món chay',
+				subtitle: 'Giữ chế độ ăn chay có trứng và sữa',
+				quote: _extractSnippet(trimmed, ['món chay', 'ăn chay', 'chay']),
+				type: 'diet',
+			));
+		}
+
+		// 2. Built-in Allergens
 		final allergenDefs = [
 			{
 				'key': 'milk',
@@ -201,6 +221,8 @@ class AiNoteParser {
 			},
 		];
 
+		final Set<String> matchedKeys = {};
+
 		for (final def in allergenDefs) {
 			final kws = def['keywords'] as List<String>;
 			bool matched = false;
@@ -214,6 +236,7 @@ class AiNoteParser {
 				}
 			}
 			if (matched) {
+				matchedKeys.add(def['key'] as String);
 				list.add(ExtractedCriterion(
 					id: 'allergen_${def['key']}',
 					title: def['title'] as String,
@@ -222,6 +245,55 @@ class AiNoteParser {
 					type: 'allergen',
 					allergenKey: def['key'] as String,
 				));
+			}
+		}
+
+		// 2b. Dynamic Custom Allergens Parsing (e.g. "dị ứng cam", "dị ứng táo", "kiêng dâu tây"...)
+		final customAllergyRegex = RegExp(
+			r'(dị ứng|di ung|kiêng|kieng|tránh|tranh|không ăn được|khong an duoc)\s+([a-zA-Zàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\s]+)',
+			caseSensitive: false,
+		);
+
+		for (final match in customAllergyRegex.allMatches(trimmed)) {
+			final fullPhrase = match.group(0) ?? '';
+			final allergyTarget = match.group(2)?.trim().replaceAll(RegExp(r'\s+'), ' ') ?? '';
+			if (allergyTarget.isNotEmpty) {
+				// Split by comma or "và" / "hoặc"
+				final parts = allergyTarget.split(RegExp(r',| và | va | hoặc | hoac '));
+				for (final p in parts) {
+					final cleanP = p.trim();
+					final normP = _normalize(cleanP);
+					if (cleanP.length >= 2 &&
+							!cleanP.contains('đường') &&
+							!cleanP.contains('muối') &&
+							!cleanP.contains('chất béo') &&
+							!cleanP.contains('calo') &&
+							!cleanP.contains('sữa') &&
+							!cleanP.contains('đậu phộng') &&
+							!cleanP.contains('lạc') &&
+							!cleanP.contains('gluten') &&
+							!cleanP.contains('đậu nành') &&
+							!cleanP.contains('trứng') &&
+							!cleanP.contains('tôm') &&
+							!cleanP.contains('cua') &&
+							!cleanP.contains('cá') &&
+							!cleanP.contains('mè') &&
+							!cleanP.contains('vừng') &&
+							!cleanP.contains('ớt') &&
+							!cleanP.contains('bột ngọt') &&
+							!cleanP.contains('thịt bò') &&
+							!matchedKeys.contains(normP)) {
+						matchedKeys.add(normP);
+						list.add(ExtractedCriterion(
+							id: 'custom_allergen_$normP',
+							title: 'Dị ứng ${cleanP[0].toUpperCase()}${cleanP.substring(1)}',
+							subtitle: 'Dị ứng tùy chỉnh từ ghi chú · Tránh $cleanP',
+							quote: fullPhrase.length > 30 ? fullPhrase.substring(0, 30) : fullPhrase,
+							type: 'allergen',
+							allergenKey: 'custom_$normP',
+						));
+					}
+				}
 			}
 		}
 
