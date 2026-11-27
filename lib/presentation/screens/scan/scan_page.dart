@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../business_logic/viewmodels/auth_viewmodel.dart';
+import '../../../business_logic/viewmodels/profile_viewmodel.dart';
 import '../../../business_logic/viewmodels/scan_viewmodel.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/validators/barcode_validator.dart';
@@ -51,10 +53,28 @@ class _ScanPageState extends State<ScanPage>
 
   Future<void> _submitBarcode(String rawBarcode) async {
     final clean = rawBarcode.trim();
+    if (clean.isEmpty) {
+      setState(() {
+        _barcodeError = 'Vui lòng nhập mã vạch';
+      });
+      if (scanMode != ScanMode.manualInput && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng nhập mã vạch')),
+        );
+      }
+      return;
+    }
     if (!BarcodeValidator.isValid(clean)) {
       setState(() {
         _barcodeError = 'Mã vạch không hợp lệ (cần 8, 12 hoặc 13 chữ số)';
       });
+      if (scanMode != ScanMode.manualInput && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content:
+                  Text('Mã vạch không hợp lệ (cần 8, 12 hoặc 13 chữ số)')),
+        );
+      }
       return;
     }
 
@@ -70,12 +90,30 @@ class _ScanPageState extends State<ScanPage>
     }
     vm ??= ScanViewModel();
 
+    int? activeUserId;
     try {
-      final success = await vm.lookupBarcode(clean);
+      activeUserId = context.read<ProfileViewModel>().activeUserId;
+    } catch (_) {
+      activeUserId = null;
+    }
+    if (activeUserId == null) {
+      try {
+        activeUserId = context.read<AuthViewModel>().currentUser?.id;
+      } catch (_) {
+        activeUserId = null;
+      }
+    }
+
+    try {
+      final success = await vm.lookupBarcode(clean, activeUserId: activeUserId);
       if (!mounted) return;
 
       if (success && vm.scannedProduct != null) {
-        widget.onOpenFood(vm.scannedProduct!.toFood());
+        widget.onOpenFood(vm.scannedProduct!.toFood(
+          nutrition: vm.scannedNutrition,
+          allergenViolations: vm.allergenViolations,
+          nutritionViolations: vm.nutritionViolations,
+        ));
       } else if (vm.isNotFound) {
         Navigator.push(
           context,
@@ -254,331 +292,407 @@ class _ScanPageState extends State<ScanPage>
           )
         ],
       ),
-      body: Column(
-        children: [
-          // Mode Switcher Segmented Bar
-          Container(
-            color: canvasBg,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEBEFEA),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildModeTab(
-                      label: 'Mã vạch',
-                      icon: Icons.qr_code_scanner,
-                      isSelected: scanMode == ScanMode.barcode || isFailed,
-                      onTap: () => setState(() => scanMode = ScanMode.barcode),
-                    ),
+      body: LayoutBuilder(
+        builder: (context, bodyConstraints) {
+          return Column(
+            children: [
+              // Mode Switcher Segmented Bar
+              Container(
+                color: canvasBg,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEBEFEA),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  Expanded(
-                    child: _buildModeTab(
-                      label: 'Thành phần',
-                      icon: Icons.document_scanner_outlined,
-                      isSelected: isIngredientMode,
-                      onTap: () =>
-                          setState(() => scanMode = ScanMode.ingredientList),
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildModeTab(
-                      label: 'Nhập số',
-                      icon: Icons.keyboard_outlined,
-                      isSelected: isManual,
-                      onTap: () =>
-                          setState(() => scanMode = ScanMode.manualInput),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Camera View Area or Manual Input Area
-          Expanded(
-            child: isManual
-                ? _buildManualInputView()
-                : Stack(
-                    alignment: Alignment.center,
+                  child: Row(
                     children: [
-                      // Camera Background Simulation
-                      Container(
-                        width: double.infinity,
-                        color: const Color(0xFF3B4438),
-                        child: Image.network(
-                          'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80',
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Center(
-                            child: Icon(Icons.camera_alt,
-                                size: 64, color: Colors.white54),
-                          ),
+                      Expanded(
+                        child: _buildModeTab(
+                          label: 'Mã vạch',
+                          icon: Icons.qr_code_scanner,
+                          isSelected:
+                              scanMode == ScanMode.barcode || isFailed,
+                          onTap: () =>
+                              setState(() => scanMode = ScanMode.barcode),
                         ),
                       ),
-                      Container(
-                          color: Colors.black.withAlpha(flashOn ? 30 : 100)),
-
-                      // Mode Badge Banner
-                      Positioned(
-                        top: 24,
-                        child: InkWell(
-                          onTap: isFailed ? _showScanFailedPrompt : null,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isFailed ? Colors.white : primaryGreen,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 8,
-                                  offset: Offset(0, 2),
-                                )
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  isFailed
-                                      ? Icons.warning_amber_rounded
-                                      : isIngredientMode
-                                          ? Icons.description_outlined
-                                          : Icons.center_focus_weak,
-                                  size: 16,
-                                  color: isFailed ? Colors.red : Colors.white,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  isFailed
-                                      ? 'Không quét được ➔ Bấm chọn cách khác'
-                                      : isIngredientMode
-                                          ? 'Đưa bảng thành phần vào khung OCR'
-                                          : 'Đưa mã vạch vào khung',
-                                  style: TextStyle(
-                                    color: isFailed ? Colors.red : Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                      Expanded(
+                        child: _buildModeTab(
+                          label: 'Thành phần',
+                          icon: Icons.document_scanner_outlined,
+                          isSelected: isIngredientMode,
+                          onTap: () => setState(
+                              () => scanMode = ScanMode.ingredientList),
                         ),
                       ),
-
-                      // Viewfinder Frame Overlay
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        width: isIngredientMode ? 300 : 280,
-                        height: isIngredientMode ? 260 : 180,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: isFailed ? Colors.red : Colors.white,
-                            width: 2.5,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Animated Scanner Laser Line
-                            AnimatedBuilder(
-                              animation: _animation,
-                              builder: (context, child) {
-                                return Transform.translate(
-                                  offset: Offset(0, _animation.value),
-                                  child: Container(
-                                    height: 2,
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      color:
-                                          isFailed ? Colors.red : primaryGreen,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: isFailed
-                                              ? Colors.red
-                                              : primaryGreen,
-                                          blurRadius: 6,
-                                          spreadRadius: 1,
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Camera Bottom Controls
-                      Positioned(
-                        bottom: 24,
-                        child: Row(
-                          children: [
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                setState(() => flashOn = !flashOn);
-                              },
-                              icon: Icon(
-                                  flashOn
-                                      ? Icons.flashlight_on
-                                      : Icons.flashlight_off,
-                                  size: 18),
-                              label: Text(flashOn ? 'Tắt đèn' : 'Bật đèn'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF233B2B),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                if (isFailed) {
-                                  _showScanFailedPrompt();
-                                } else {
-                                  setState(() {
-                                    scanMode = ScanMode.barcodeFailed;
-                                  });
-                                  _showScanFailedPrompt();
-                                }
-                              },
-                              icon: const Icon(Icons.help_outline, size: 18),
-                              label: const Text('Lỗi quét?'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF8B2B24),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                              ),
-                            ),
-                          ],
+                      Expanded(
+                        child: _buildModeTab(
+                          label: 'Nhập số',
+                          icon: Icons.keyboard_outlined,
+                          isSelected: isManual,
+                          onTap: () =>
+                              setState(() => scanMode = ScanMode.manualInput),
                         ),
                       ),
                     ],
                   ),
-          ),
+                ),
+              ),
 
-          // Bottom Controls & Simulation Panel
-          if (!isManual)
-            Container(
-              padding: const EdgeInsets.all(20),
-              color: canvasBg,
-              child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isManual
-                      ? 'Nhập dãy số mã vạch'
-                      : isIngredientMode
-                          ? 'Giữ bảng thành phần rõ và đủ sáng'
-                          : 'Giữ mã vạch rõ và đủ sáng',
-                  style: const TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  isManual
-                      ? 'Hệ thống sẽ tra cứu thông tin sản phẩm trực tiếp từ số mã vạch.'
-                      : isIngredientMode
-                          ? 'Ăn Lành sẽ tự động trích xuất thành phần từ ảnh camera.'
-                          : 'Ăn Lành sẽ đối chiếu mã với Open Food Facts để trả về kết quả.',
-                  style: const TextStyle(fontSize: 12, color: subText),
-                ),
-                const SizedBox(height: 10),
-                const Row(
-                  children: [
-                    Icon(Icons.shield_outlined, size: 16, color: primaryGreen),
-                    SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Không lưu ảnh từ camera. Nguồn tra cứu: Open Food Facts.',
-                        style: TextStyle(fontSize: 11, color: subText),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
+              // Camera View Area or Manual Input Area
+              Expanded(
+                child: isManual
+                    ? _buildManualInputView()
+                    : LayoutBuilder(
+                        builder: (context, camConstraints) {
+                          final double vfHeight = (camConstraints.maxHeight -
+                                  110)
+                              .clamp(70.0, isIngredientMode ? 260.0 : 180.0);
+                          final double vfWidth = (camConstraints.maxWidth - 40)
+                              .clamp(160.0, isIngredientMode ? 300.0 : 280.0);
+                          return Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Camera Background Simulation
+                              Container(
+                                width: double.infinity,
+                                color: const Color(0xFF3B4438),
+                                child: Image.network(
+                                  'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80',
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Center(
+                                    child: Icon(Icons.camera_alt,
+                                        size: 64, color: Colors.white54),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                  color:
+                                      Colors.black.withAlpha(flashOn ? 30 : 100)),
 
-                // Action Simulation Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        key: const Key('scan_preview_sample_button'),
-                        onPressed: () =>
-                            _submitBarcode(barcodeController.text.trim()),
-                        icon: const Icon(Icons.check_circle_outline, size: 18),
-                        label: const Text('Tra cứu mã vạch',
-                            style: TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.bold)),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: primaryGreen,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                              // Mode Badge Banner
+                              Positioned(
+                                top: camConstraints.maxHeight < 220 ? 8 : 24,
+                                left: 16,
+                                right: 16,
+                                child: Center(
+                                  child: InkWell(
+                                    onTap: isFailed
+                                        ? _showScanFailedPrompt
+                                        : null,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: isFailed
+                                            ? Colors.white
+                                            : primaryGreen,
+                                        borderRadius: BorderRadius.circular(20),
+                                        boxShadow: const [
+                                          BoxShadow(
+                                            color: Colors.black26,
+                                            blurRadius: 8,
+                                            offset: Offset(0, 2),
+                                          )
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            isFailed
+                                                ? Icons.warning_amber_rounded
+                                                : isIngredientMode
+                                                    ? Icons.description_outlined
+                                                    : Icons.center_focus_weak,
+                                            size: 16,
+                                            color: isFailed
+                                                ? Colors.red
+                                                : Colors.white,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Text(
+                                              isFailed
+                                                  ? 'Không quét được ➔ Bấm chọn cách khác'
+                                                  : isIngredientMode
+                                                      ? 'Đưa bảng thành phần vào khung OCR'
+                                                      : 'Đưa mã vạch vào khung',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: isFailed
+                                                    ? Colors.red
+                                                    : Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              // Viewfinder Frame Overlay
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                width: vfWidth,
+                                height: vfHeight,
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color:
+                                        isFailed ? Colors.red : Colors.white,
+                                    width: 2.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(18),
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      // Animated Scanner Laser Line
+                                      AnimatedBuilder(
+                                        animation: _animation,
+                                        builder: (context, child) {
+                                          final double maxLaserOffset =
+                                              (vfHeight * 0.36)
+                                                  .clamp(12.0, 70.0);
+                                          final double dy = (_animation.value /
+                                                  70.0) *
+                                              maxLaserOffset;
+                                          return Transform.translate(
+                                            offset: Offset(0, dy),
+                                            child: Container(
+                                              height: 2,
+                                              width: double.infinity,
+                                              decoration: BoxDecoration(
+                                                color: isFailed
+                                                    ? Colors.red
+                                                    : primaryGreen,
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: isFailed
+                                                        ? Colors.red
+                                                        : primaryGreen,
+                                                    blurRadius: 6,
+                                                    spreadRadius: 1,
+                                                  )
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              // Camera Bottom Controls
+                              Positioned(
+                                bottom: camConstraints.maxHeight < 220 ? 8 : 24,
+                                left: 12,
+                                right: 12,
+                                child: Center(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        ElevatedButton.icon(
+                                          onPressed: () {
+                                            setState(() => flashOn = !flashOn);
+                                          },
+                                          icon: Icon(
+                                              flashOn
+                                                  ? Icons.flashlight_on
+                                                  : Icons.flashlight_off,
+                                              size: 18),
+                                          label: Text(
+                                              flashOn ? 'Tắt đèn' : 'Bật đèn'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                const Color(0xFF233B2B),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        ElevatedButton.icon(
+                                          onPressed: () {
+                                            if (isFailed) {
+                                              _showScanFailedPrompt();
+                                            } else {
+                                              setState(() {
+                                                scanMode =
+                                                    ScanMode.barcodeFailed;
+                                              });
+                                              _showScanFailedPrompt();
+                                            }
+                                          },
+                                          icon: const Icon(Icons.help_outline,
+                                              size: 18),
+                                          label: const Text('Lỗi quét?'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                const Color(0xFF8B2B24),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+              ),
+
+              // Bottom Controls & Simulation Panel
+              if (!isManual)
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: bodyConstraints.maxHeight * 0.48,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      color: canvasBg,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isManual
+                                ? 'Nhập dãy số mã vạch'
+                                : isIngredientMode
+                                    ? 'Giữ bảng thành phần rõ và đủ sáng'
+                                    : 'Giữ mã vạch rõ và đủ sáng',
+                            style: const TextStyle(
+                                fontSize: 17, fontWeight: FontWeight.bold),
                           ),
-                        ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isManual
+                                ? 'Hệ thống sẽ tra cứu thông tin sản phẩm trực tiếp từ số mã vạch.'
+                                : isIngredientMode
+                                    ? 'Ăn Lành sẽ tự động trích xuất thành phần từ ảnh camera.'
+                                    : 'Ăn Lành sẽ đối chiếu mã với Open Food Facts để trả về kết quả.',
+                            style:
+                                const TextStyle(fontSize: 12, color: subText),
+                          ),
+                          const SizedBox(height: 10),
+                          const Row(
+                            children: [
+                              Icon(Icons.shield_outlined,
+                                  size: 16, color: primaryGreen),
+                              SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Không lưu ảnh từ camera. Nguồn tra cứu: Open Food Facts.',
+                                  style:
+                                      TextStyle(fontSize: 11, color: subText),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Action Simulation Buttons
+                          Row(
+                            children: [
+                              Expanded(
+                                child: FilledButton.icon(
+                                  key: const Key('scan_preview_sample_button'),
+                                  onPressed: () => _submitBarcode(
+                                      barcodeController.text.trim()),
+                                  icon: const Icon(Icons.check_circle_outline,
+                                      size: 18),
+                                  label: const Text(
+                                    'Tra cứu mã vạch',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: primaryGreen,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              OutlinedButton(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => LookupErrorPage(
+                                      barcode: barcodeController.text.trim(),
+                                      onRetry: () => _submitBarcode(
+                                          barcodeController.text.trim()),
+                                    ),
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text('Lỗi kết nối',
+                                    style: TextStyle(fontSize: 11)),
+                              ),
+                              const SizedBox(width: 4),
+                              OutlinedButton(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => LookupNotFoundPage(
+                                      barcode: barcodeController.text.trim(),
+                                    ),
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text('Không thấy',
+                                    style: TextStyle(fontSize: 11)),
+                              ),
+                            ],
+                          )
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    OutlinedButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => LookupErrorPage(
-                            barcode: barcodeController.text.trim(),
-                            onRetry: () =>
-                                _submitBarcode(barcodeController.text.trim()),
-                          ),
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Lỗi kết nối',
-                          style: TextStyle(fontSize: 11)),
-                    ),
-                    const SizedBox(width: 4),
-                    OutlinedButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => LookupNotFoundPage(
-                            barcode: barcodeController.text.trim(),
-                          ),
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Không thấy',
-                          style: TextStyle(fontSize: 11)),
-                    ),
-                  ],
+                  ),
                 )
-              ],
-            ),
-          )
-        ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -594,7 +708,7 @@ class _ScanPageState extends State<ScanPage>
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
@@ -617,12 +731,16 @@ class _ScanPageState extends State<ScanPage>
               color: isSelected ? primaryGreen : subText,
             ),
             const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? primaryGreen : subText,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? primaryGreen : subText,
+                ),
               ),
             ),
           ],

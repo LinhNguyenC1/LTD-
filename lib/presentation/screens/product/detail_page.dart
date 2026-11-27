@@ -83,7 +83,9 @@ class DetailPage extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   isBad
-                      ? 'Có sữa, không hợp hồ sơ của bạn'
+                      ? (food.id == 'cocoa'
+                          ? 'Có sữa, không hợp hồ sơ của bạn'
+                          : 'Không phù hợp với hồ sơ của bạn')
                       : isUnknown
                           ? 'Chưa thể kết luận phù hợp'
                           : 'Phù hợp với hồ sơ của bạn',
@@ -190,11 +192,15 @@ class DetailPage extends StatelessWidget {
                                   Icon(Icons.add_circle_outline,
                                       size: 14, color: primaryGreen),
                                   SizedBox(width: 4),
-                                  Text('Điểm cộng AI',
-                                      style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: primaryGreen)),
+                                  Expanded(
+                                    child: Text('Điểm cộng AI',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: primaryGreen)),
+                                  ),
                                 ],
                               ),
                               SizedBox(height: 4),
@@ -224,11 +230,15 @@ class DetailPage extends StatelessWidget {
                                   Icon(Icons.remove_circle_outline,
                                       size: 14, color: Color(0xFFB23A2B)),
                                   SizedBox(width: 4),
-                                  Text('Rủi ro AI phát hiện',
-                                      style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFFB23A2B))),
+                                  Expanded(
+                                    child: Text('Rủi ro AI phát hiện',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFFB23A2B))),
+                                  ),
                                 ],
                               ),
                               SizedBox(height: 4),
@@ -564,15 +574,21 @@ class DetailPage extends StatelessWidget {
   }
 
   Widget _buildDataRow(String label, String value) {
+    final displayValue = value.trim().isEmpty ? 'Chưa có dữ liệu' : value;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 13, color: subText)),
-          Text(value,
-              style:
-                  const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(displayValue,
+                textAlign: TextAlign.right,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          ),
         ],
       ),
     );
